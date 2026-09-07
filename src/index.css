@@ -1,0 +1,25 @@
+@import "tailwindcss";
+
+/* BookMyDarzi brand teal - the single source of truth for the color
+   previously hardcoded as the arbitrary value #0A8C8C across ~13 files
+   (sidebar, page headers, table headers, detail-page hero bars). Using
+   Tailwind v4's @theme lets every component reference bg-brand/text-brand/
+   border-brand instead of repeating the raw hex, and gives a real hover
+   shade instead of each callsite inventing its own darkening. */
+@theme {
+  --color-brand: #0a8c8c;
+  --color-brand-dark: #086b6b;
+}
+
+/* Neutralize the browser's default autofill highlight (harsh blue/yellow)
+   so autofilled inputs match the form's own styling instead of standing
+   out. The huge inset box-shadow trick is the only reliable cross-browser
+   way to override autofill background - `background-color` alone is
+   ignored by Chrome/Firefox on autofilled fields. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #1f2937;
+  transition: background-color 9999s ease-in-out 0s;
+  box-shadow: 0 0 0px 1000px #f9fafb inset;
+}

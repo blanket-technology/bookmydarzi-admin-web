@@ -1,0 +1,167 @@
+import {
+  XCircle, RefreshCw, SlidersHorizontal,
+  ChevronRight, AlertTriangle,
+} from "lucide-react";
+import PageHeader from "../../../components/common/PageHeader.jsx";
+import LoadingState from "../../../components/common/LoadingState.jsx";
+import CancellationDetailModal from "../../../components/common/CancellationDetailModal.jsx";
+import PolicyEditor from "../components/PolicyEditor.jsx";
+import CancellationBadge from "../components/CancellationBadge.jsx";
+import useCancellations from "../hooks/useCancellations.js";
+import {
+  PAYMENT_BADGE,
+  PAYMENT_FILTER_OPTIONS,
+  STATUS_BADGE,
+  STATUS_FILTER_OPTIONS,
+  TABLE_HEADERS,
+} from "../constants/cancellationConstants.js";
+import { fmtCurrency, fmtDate } from "../utils/cancellationUtils.js";
+
+export default function CancellationsPage() {
+  const {
+    items,
+    total,
+    page,
+    statusFilter,
+    paymentFilter,
+    loading,
+    error,
+    selectedId,
+    policyOpen,
+    totalPages,
+    setPage,
+    setStatusFilter,
+    setPaymentFilter,
+    setSelectedId,
+    setPolicyOpen,
+    fetchCancellations,
+  } = useCancellations();
+
+  return (
+    <div className="p-3 sm:p-5 w-full min-h-screen bg-gray-100">
+      <PageHeader
+        title="Cancellations & Refunds"
+        subtitle={`${total} total record${total !== 1 ? "s" : ""}`}
+        actions={
+          <>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg text-gray-800 text-xs outline-none bg-white font-semibold"
+            >
+              {STATUS_FILTER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value)}
+              className="px-2.5 py-1.5 rounded-lg text-gray-800 text-xs outline-none bg-white font-semibold"
+            >
+              {PAYMENT_FILTER_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+            <button
+              onClick={fetchCancellations}
+              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
+            >
+              <RefreshCw size={13} /> Refresh
+            </button>
+            <button
+              onClick={() => setPolicyOpen(true)}
+              className="flex items-center gap-1.5 bg-white text-teal-800 px-3 py-1.5 rounded-lg text-xs font-semibold hover:bg-gray-100"
+            >
+              <SlidersHorizontal size={13} /> Policy
+            </button>
+          </>
+        }
+      />
+
+      {error && (
+        <div className="flex items-center gap-2 bg-rose-50 text-rose-700 border border-rose-100 rounded-xl px-4 py-3 mb-4 text-sm">
+          <AlertTriangle size={16} /> {error}
+        </div>
+      )}
+
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden">
+        {loading ? (
+          <LoadingState />
+        ) : items.length === 0 ? (
+          <div className="text-center py-16 text-slate-400">
+            <XCircle size={40} className="mx-auto mb-3 opacity-40" />
+            <p className="font-semibold">No cancellations found</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-100 bg-slate-50">
+                  {TABLE_HEADERS.map((h) => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {items.map((item) => (
+                  <tr key={item.Id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">{item.CancellationCode || `#${item.Id}`}</td>
+                    <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{item.OrderCode || item.OrderId}</td>
+                    <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
+                      <div>{item.CustomerName || "-"}</div>
+                      <div className="text-xs text-slate-400">{item.CustomerPhone || ""}</div>
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap"><CancellationBadge status={item.PaymentType} map={PAYMENT_BADGE} /></td>
+                    <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{fmtCurrency(item.PaidAmount)}</td>
+                    <td className="px-4 py-3 font-semibold text-emerald-700 whitespace-nowrap">
+                      {item.OverrideRefundAmount != null
+                        ? <><span className="line-through text-slate-400 mr-1">{fmtCurrency(item.RefundAmount)}</span>{fmtCurrency(item.OverrideRefundAmount)}</>
+                        : fmtCurrency(item.RefundAmount)}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-slate-500 whitespace-nowrap capitalize">
+                      {(item.OrderStageAtCancel ?? "").replace(/_/g, " ") || "-"}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap"><CancellationBadge status={item.Status} map={STATUS_BADGE} /></td>
+                    <td className="px-4 py-3 text-xs text-slate-400 whitespace-nowrap">{fmtDate(item.CreatedAt)}</td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <button
+                        onClick={() => setSelectedId(item.Id)}
+                        className="flex items-center gap-1 text-teal-600 hover:text-teal-800 text-xs font-semibold"
+                      >
+                        <ChevronRight size={14} /> View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <p className="text-sm text-slate-500">Page {page + 1} of {totalPages}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage(Math.max(0, page - 1))}
+              disabled={page === 0}
+              className="px-3 py-1.5 border rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
+            >Prev</button>
+            <button
+              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+              disabled={page >= totalPages - 1}
+              className="px-3 py-1.5 border rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
+            >Next</button>
+          </div>
+        </div>
+      )}
+
+      {selectedId && (
+        <CancellationDetailModal cancellationId={selectedId} onClose={() => setSelectedId(null)} onRefresh={fetchCancellations} />
+      )}
+
+      {policyOpen && <PolicyEditor onClose={() => setPolicyOpen(false)} />}
+    </div>
+  );
+}
