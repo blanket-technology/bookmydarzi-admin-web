@@ -1,4 +1,4 @@
-import { AlertCircle, RefreshCw, Search, CheckCircle2, Clock, XCircle, Truck } from "lucide-react";
+import { AlertCircle, RefreshCw, Search, X, CheckCircle2, Clock, XCircle, Truck } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader.jsx";
 import Pagination from "../../../components/common/Pagination.jsx";
 import PaymentDetailModal from "../../../components/common/PaymentDetailModal.jsx";
@@ -28,7 +28,7 @@ function KpiCard({ icon: Icon, label, value, tone }) {
   };
   return (
     <div className="flex items-center gap-3 bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center border ${tones[tone]}`}>
+      <div className={`w-9 h-9 rounded-lg flex items-center justify-center border shrink-0 ${tones[tone]}`}>
         <Icon size={17} />
       </div>
       <div className="min-w-0">
@@ -73,6 +73,8 @@ export default function PaymentsPage() {
     { paid: 0, pending: 0, failed: 0, cod: 0 },
   );
 
+  const hasActiveFilters = Boolean(search || filterStatus);
+
   return (
     <>
       {refundOrderId && (
@@ -100,33 +102,52 @@ export default function PaymentsPage() {
         <PageHeader
           title="Payments"
           subtitle={`${total} order${total !== 1 ? "s" : ""} · payment status & refund management`}
-          actions={
-            <>
-              <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search order code / name / mobile…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 pr-4 py-1.5 rounded-full text-gray-800 text-xs outline-none w-56 bg-white"
-                />
-              </div>
-              <select
-                value={filterStatus}
-                onChange={(e) => handleFilterStatusChange(e.target.value)}
-                className="px-2.5 py-1.5 rounded-lg text-gray-800 text-xs outline-none bg-white font-semibold"
-              >
-                {PAYMENT_STATUS_FILTER_OPTIONS.map((opt) => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-              <button onClick={fetchOrders} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
-                <RefreshCw size={13} /> Refresh
-              </button>
-            </>
-          }
         />
+
+        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-4 flex flex-wrap items-center gap-2.5">
+          <div className="relative flex-1 min-w-[220px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search order code / name / mobile…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-lg text-gray-800 text-sm outline-none border-2 border-gray-200 focus:border-teal-500 bg-gray-50 focus:bg-white transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+          <select
+            value={filterStatus}
+            onChange={(e) => handleFilterStatusChange(e.target.value)}
+            className="px-3 py-2 rounded-lg text-gray-700 text-sm outline-none border-2 border-gray-200 focus:border-teal-500 bg-gray-50 focus:bg-white font-semibold transition-colors min-w-[170px]"
+          >
+            {PAYMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+          {hasActiveFilters && (
+            <button
+              onClick={() => { setSearch(""); handleFilterStatusChange(""); }}
+              className="text-xs font-semibold text-gray-400 hover:text-gray-600 px-2"
+            >
+              Clear filters
+            </button>
+          )}
+          <button
+            onClick={fetchOrders}
+            className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ml-auto"
+          >
+            <RefreshCw size={14} /> Refresh
+          </button>
+        </div>
 
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">

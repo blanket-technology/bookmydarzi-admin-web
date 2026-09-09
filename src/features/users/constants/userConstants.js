@@ -58,4 +58,5 @@ export const USER_TABLE_COLUMNS = [
   { key: "role", label: "Role" },
   { key: "verification", label: "Verified", align: "center" },
   { key: "joined", label: "Joined" },
+  { key: "chevron", label: "" },
 ];

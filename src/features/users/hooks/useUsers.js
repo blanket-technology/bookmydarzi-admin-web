@@ -46,6 +46,22 @@ export default function useUsers() {
 
   const activeRoleLabel = getActiveRoleLabel(roleFilter, ROLE_OPTIONS);
 
+  // Role breakdown across the current page - a quick at-a-glance strip
+  // (mirrors the Paid/Pending/Failed/COD KPI row on the Payments page), not
+  // a separate backend call, since users already carries every row's Role.
+  const roleCounts = users.reduce(
+    (acc, u) => {
+      const key = (u.Role || "").toLowerCase();
+      if (key === "user") acc.customer += 1;
+      else if (key === "tailor") acc.tailor += 1;
+      else if (key === "employee") acc.employee += 1;
+      else if (key === "admin" || key === "superadmin") acc.admin += 1;
+      if (!u.IsActive) acc.inactive += 1;
+      return acc;
+    },
+    { customer: 0, tailor: 0, employee: 0, admin: 0, inactive: 0 },
+  );
+
   const handleRefresh = () => refetch();
 
   const handleLimitChange = (nextLimit) => {
@@ -63,6 +79,7 @@ export default function useUsers() {
     roleFilter,
     statusFilter,
     activeRoleLabel,
+    roleCounts,
     setSearch,
     setRoleFilter,
     setStatusFilter,

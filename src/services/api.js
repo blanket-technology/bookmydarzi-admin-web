@@ -124,6 +124,19 @@ api.interceptors.response.use(
 );
 
 function _logout() {
+  // Best-effort server-side revocation before clearing local state - without
+  // this, a still-unexpired access token (or a refresh token the backend
+  // hasn't yet detected as stale) keeps working even after this "logout",
+  // e.g. if it was captured by an XSS payload or a shared-machine snoop
+  // before the user signed out. Never block the local logout on it: a
+  // network failure here must not prevent clearing this browser's session.
+  const refreshToken = sessionStorage.getItem("refresh_token");
+  const accessToken = sessionStorage.getItem("access_token");
+  if (refreshToken) {
+    axios
+      .post(`${BASE_URL}/auth/logout`, { refresh_token: refreshToken, access_token: accessToken }, { timeout: 5000 })
+      .catch(() => {});
+  }
   sessionStorage.removeItem("access_token");
   sessionStorage.removeItem("refresh_token");
   sessionStorage.removeItem("user");

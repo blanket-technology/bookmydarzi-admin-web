@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { resolvePermissions } from "../../../constants/permissions";
+import api from "../../../services/api.js";
 
 function readStoredUser() {
   try {
@@ -23,6 +24,14 @@ export const useAuthStore = create((set) => ({
   },
 
   logout: () => {
+    // Best-effort server-side revocation (see api.js's _logout for the same
+    // pattern/rationale) - clearing only this browser's sessionStorage never
+    // actually invalidates a still-live access/refresh token on its own.
+    const refreshToken = sessionStorage.getItem("refresh_token");
+    const accessToken = sessionStorage.getItem("access_token");
+    if (refreshToken) {
+      api.post("/auth/logout", { refresh_token: refreshToken, access_token: accessToken }).catch(() => {});
+    }
     sessionStorage.removeItem("access_token");
     sessionStorage.removeItem("refresh_token");
     sessionStorage.removeItem("user");
