@@ -4,6 +4,7 @@ import Pagination from "../../../components/common/Pagination";
 import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDate } from "../../../utils/formatters";
 import { STATUS_LABELS } from "../../../utils/orderActions";
+import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js";
 import { PAYMENT_STATUS_OPTIONS } from "../constants/orderConstants.js";
 import { getStatusFilterOptions } from "../utils/orderUtils.js";
 import CancelOrderModal from "../components/CancelOrderModal.jsx";
@@ -265,7 +266,7 @@ export default function OrderDetailsPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="font-semibold text-gray-800">{order.AmountDisplay || "-"}</div>
-                      <div className="text-gray-400 text-xs">{order.PaymentStatusLabel || "-"}</div>
+                      <div className="text-gray-400 text-xs">{paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)}</div>
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge

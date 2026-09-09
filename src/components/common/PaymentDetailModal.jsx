@@ -7,6 +7,7 @@ import api from "../../services/api";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../utils/formatters";
 import StatusBadge from "./StatusBadge.jsx";
 import LoadingState from "./LoadingState.jsx";
+import { paymentStatusLabel } from "../../features/payments/constants/paymentConstants.js";
 
 // Shared payment-detail modal, extracted from Payments/PaymentsPage.jsx so
 // any page holding an order ID (e.g. Users/UserDetailPage.jsx's Payments
@@ -154,7 +155,7 @@ export default function PaymentDetailModal({ orderId, orderCode, onClose }) {
                     {payment?.Amount != null ? formatCurrency(payment.Amount, 2) : "-"}
                   </p>
                 </div>
-                <StatusBadge status={status} label={titleCase(payment?.Status) || "-"} />
+                <StatusBadge status={status} label={paymentStatusLabel(payment?.Status)} />
               </div>
 
               {isStalledCheckout && (

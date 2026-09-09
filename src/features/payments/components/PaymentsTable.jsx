@@ -1,5 +1,6 @@
 import { Loader2, RotateCcw, RefreshCw, SlidersHorizontal, ChevronRight, CreditCard } from "lucide-react";
 import StatusBadge from "../../../components/common/StatusBadge.jsx";
+import { paymentStatusLabel } from "../constants/paymentConstants.js";
 
 const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "advance_pending"]);
 
@@ -91,7 +92,7 @@ export default function PaymentsTable({
                   <td className="px-4 py-3">
                     <StatusBadge
                       status={(order.SettlementStatus || "").toLowerCase()}
-                      label={order.PaymentStatusLabel || order.SettlementStatus || "-"}
+                      label={paymentStatusLabel(order.SettlementStatus)}
                     />
                   </td>
                   {hasAnyAction && (

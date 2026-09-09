@@ -5,7 +5,7 @@ import PaymentDetailModal from "../../../components/common/PaymentDetailModal.js
 import RefundModal from "../components/RefundModal.jsx";
 import StatusOverrideModal from "../components/StatusOverrideModal.jsx";
 import PaymentsTable from "../components/PaymentsTable.jsx";
-import { PAYMENT_STATUS_FILTER_OPTIONS } from "../constants/paymentConstants.js";
+import { PAYMENT_STATUS_FILTER_OPTIONS, PAYMENT_STATUS_LABELS } from "../constants/paymentConstants.js";
 import usePayments from "../hooks/usePayments.js";
 
 // Group a raw payment/settlement status into the four states an ops team
@@ -158,10 +158,10 @@ export default function PaymentsPage() {
 
         {!loading && (orders || []).length > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            <KpiCard icon={CheckCircle2} label="Paid" value={counts.paid} tone="paid" />
-            <KpiCard icon={Clock} label="Pending" value={counts.pending} tone="pending" />
-            <KpiCard icon={XCircle} label="Failed" value={counts.failed} tone="failed" />
-            <KpiCard icon={Truck} label="Pay on Delivery" value={counts.cod} tone="cod" />
+            <KpiCard icon={CheckCircle2} label={PAYMENT_STATUS_LABELS.fully_paid} value={counts.paid} tone="paid" />
+            <KpiCard icon={Clock} label={PAYMENT_STATUS_LABELS.advance_pending} value={counts.pending} tone="pending" />
+            <KpiCard icon={XCircle} label={PAYMENT_STATUS_LABELS.advance_failed} value={counts.failed} tone="failed" />
+            <KpiCard icon={Truck} label={PAYMENT_STATUS_LABELS.cod_pending} value={counts.cod} tone="cod" />
           </div>
         )}
 

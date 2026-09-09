@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import api from "../../../services/api";
 import { extractErrorMessage } from "../../../utils/formatters";
+import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js";
 
 // Mirrors the real backend order_status.py / employee.py transitions exactly
 // - previously this file used a fictional status model (cloth_pickup_pending,
@@ -654,7 +655,7 @@ export default function BridgeFullDetailsPage() {
 
         {/* Payment */}
         <Card icon={CreditCard} title="Payment">
-          <InfoRow label="Status" value={order.PaymentStatusLabel} />
+          <InfoRow label="Status" value={paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)} />
           <InfoRow label="Channel" value={d?.payment?.channel} />
           <InfoRow label="Method" value={d?.payment?.method} />
           <InfoRow label="Advance Paid" value={order.BookingAmount ? `₹${order.BookingAmount}` : null} />

@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import api, { resolveMediaUrl } from "../../../services/api";
 import { getStoredUser } from "../../../store/authStore";
+import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js";
 import { ROLES } from "../../../constants/permissions.js";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { notifyError } from "../../../services/dialogService";
@@ -1255,13 +1256,8 @@ export default function OrderFullDetailsPage() {
                 <Fact label="Total" value={order.AmountDisplay} emphasis />
                 <Fact label="Balance" value={order.RemainingAmountDisplay} emphasis={Number(order.RemainingAmount) > 0} />
                 <Fact label="Advance" value={order.BookingAmount ? formatCurrency(order.BookingAmount) : null} />
-                <Fact label="Status" value={order.PaymentStatusLabel || order.PaymentStatus} />
+                <Fact label="Status" value={paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)} />
               </div>
-              {order.SettlementStatus && (
-                <p className="mt-3 pt-3 border-t border-gray-50 text-xs text-gray-500">
-                  Settlement: <span className="font-semibold text-gray-700">{order.SettlementStatus}</span>
-                </p>
-              )}
             </SectionCard>
 
             {/* Customer & Address */}
