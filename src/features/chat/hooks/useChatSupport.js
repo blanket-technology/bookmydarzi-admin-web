@@ -20,7 +20,7 @@ export default function useChatSupport() {
   const toggleAgentOnlineStore = useChatStore((s) => s.toggleAgentOnline);
   const resolveSession = useChatStore((s) => s.resolveSession);
 
-  const [activeSession, setActiveSession] = useState(null);
+  const [activeSessionUuid, setActiveSessionUuid] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showConversation, setShowConversation] = useState(false);
@@ -41,14 +41,21 @@ export default function useChatSupport() {
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const handleSessionSelect = (session) => {
-    setActiveSession(session);
+    setActiveSessionUuid(session.uuid);
     setShowConversation(true);
   };
 
   const handleBack = () => {
     setShowConversation(false);
-    setActiveSession(null);
+    setActiveSessionUuid(null);
   };
+
+  // Re-derived from the polled `sessions` list every render instead of a
+  // frozen snapshot taken at selection time - without this, a chat left
+  // open while the 8s poll runs would keep showing the status/assignment
+  // it had at the moment it was clicked (e.g. still offering "Assign to
+  // me" after another agent resolves or claims it elsewhere).
+  const activeSession = sessions.find((s) => s.uuid === activeSessionUuid) || null;
 
   const toggleAgentOnline = async () => {
     if (!currentUser?.Id || agentToggling) return;
@@ -71,8 +78,8 @@ export default function useChatSupport() {
     }))) return;
     try {
       await resolveSession(sessionUuid);
-      if (activeSession?.uuid === sessionUuid) {
-        setActiveSession(null);
+      if (activeSessionUuid === sessionUuid) {
+        setActiveSessionUuid(null);
         setShowConversation(false);
       }
     } catch (err) {

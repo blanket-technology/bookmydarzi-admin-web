@@ -810,10 +810,7 @@ export default function OrderFullDetailsPage() {
 
             {/* Measurement - always shown; a clear message when none is on file
                 (common for orders where measurement is taken at doorstep pickup). */}
-            
-            <div className="hidden">
-              <SectionCard
-        
+            <SectionCard
               icon={Ruler}
               title="Measurement"
               accent={theme.accent}
@@ -908,8 +905,6 @@ export default function OrderFullDetailsPage() {
                 </div>
               )}
             </SectionCard>
-          </div>
-
 
             {/* Notes */}
             <SectionCard

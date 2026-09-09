@@ -6,6 +6,7 @@ import {
 } from "lucide-react";
 import { resolveMediaUrl } from "../../../services/api.js";
 import { extractErrorMessage } from "../../../utils/formatters.js";
+import renderMarkdown from "../utils/renderMarkdown.jsx";
 import { notifyError } from "../../../services/dialogService.js";
 import { getStoredUser } from "../../../store/authStore.jsx";
 import { MESSAGES_FETCH_LIMIT, SENDER_LABELS } from "../constants/chatConstants.js";
@@ -111,8 +112,12 @@ function MessageRow({ msg, onImageClick }) {
             {msg.body && <p className="text-sm text-slate-600 mt-1 text-left">{msg.body}</p>}
           </button>
         ) : (
-          <div className={`px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap break-words ${bubble}`}>
-            {msg.body}
+          <div className={`px-3.5 py-2 text-sm leading-relaxed break-words ${bubble}`}>
+            {/* Agents can send quick-reply templates authored with the same
+                markdown emphasis the AI uses (see the quick-reply picker
+                below) - rendering only for isAI would leave a human agent's
+                sent **bold** text showing literal asterisks to the customer. */}
+            {!isCustomer ? renderMarkdown(msg.body) : <div className="whitespace-pre-wrap">{msg.body}</div>}
           </div>
         )}
         <div className="flex items-center gap-1.5 mt-1 px-1">
@@ -422,7 +427,7 @@ export default function ConversationView({ session, onRefresh, onResolve, onBack
                   className="w-full text-left px-4 py-2.5 hover:bg-slate-50 border-b border-slate-50 last:border-0"
                 >
                   <div className="text-xs font-semibold text-slate-700">{qr.title}</div>
-                  <div className="text-[11px] text-slate-400 truncate">{qr.body}</div>
+                  <div className="text-[11px] text-slate-400 truncate">{qr.body.replace(/\*\*/g, "")}</div>
                 </button>
               ))}
             </div>

@@ -292,10 +292,24 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
-  // ── assign tailor (admin/superadmin; employee via assign-tailor too, before terminal, no tailor yet) ──
+  // ── assign tailor (admin/superadmin/employee) - mirrors the backend's
+  // _ASSIGN_FROM whitelist exactly (assign_tailor_service.py), not just "not
+  // terminal/not pending payment". The old looser check let this button
+  // render (and 400 on click, no tailor_id ever accepted) for e.g.
+  // ready_for_dispatch/out_for_delivery, where the backend flatly rejects
+  // assignment regardless of TailorId. ──
   if (
     !order.TailorId &&
-    ![ORDER_STATUS.PENDING_PAYMENT, ORDER_STATUS.PAYMENT_FAILED].includes(status) &&
+    [
+      ORDER_STATUS.ORDER_PLACED,
+      ORDER_STATUS.ORDER_ACCEPTED,
+      ORDER_STATUS.SEARCHING_TAILOR,
+      ORDER_STATUS.BROADCASTED,
+      ORDER_STATUS.TAILOR_ASSIGNED,
+      ORDER_STATUS.PICKUP_SCHEDULED,
+      ORDER_STATUS.PICKUP_PENDING,
+      ORDER_STATUS.PICKED_UP,
+    ].includes(status) &&
     staff
   ) {
     actions.push({

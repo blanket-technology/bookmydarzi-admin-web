@@ -55,6 +55,13 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
 
   const handleSave = async (e) => {
     e.preventDefault();
+    // A cleared/blank price input coerces to Number("") = 0, which isn't
+    // caught by the input's HTML min="0" on a programmatic submit - without
+    // this check a real bookable service could silently save at ₹0.
+    if (level === "service" && !(Number(form.base_price) > 0)) {
+      setError("Base price must be greater than ₹0.");
+      return;
+    }
     setSaving(true);
     setError("");
     try {

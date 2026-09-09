@@ -2,21 +2,16 @@ import { create } from "zustand";
 import { extractErrorMessage } from "../../../utils/formatters.js";
 import { notifyError } from "../../../services/dialogService.js";
 import { DEFAULT_LIMIT, DEFAULT_PAGE } from "../constants/orderConstants.js";
-import { buildOrdersListParams } from "../utils/orderUtils.js";
-import {
-  cancelOrder,
-  getOrdersList,
-  getTailorsForFilter,
-  isTailorRole,
-  readCachedOrders,
-  resolveOrdersEndpoint,
-} from "../services/orderService.js";
+import { cancelOrder, getTailorsForFilter, isTailorRole } from "../services/orderService.js";
 
+// orders/total/fetching/fetchError/fetchOrders used to live here too, before
+// the page moved to React Query (see useOrderList.js) - its own useQuery is
+// the actual data source now, and nothing reads this store's versions of
+// those fields. Removed: a second, never-invalidated cache sitting next to
+// the real one is exactly the kind of thing a future page could wire into
+// by mistake and silently show stale data forever (the same class of bug
+// fixed on the cancellations store this session).
 export const useOrderListStore = create((set, get) => ({
-  orders: [],
-  total: 0,
-  fetching: true,
-  fetchError: null,
   filterStatus: "",
   filterPayment: "",
   filterTailor: "",
@@ -31,7 +26,6 @@ export const useOrderListStore = create((set, get) => ({
   tailors: [],
   cancelTarget: null,
   cancelling: false,
-  requestId: 0,
   tailorsRequestId: 0,
 
   setFilterStatus: (filterStatus) => set({ filterStatus, page: DEFAULT_PAGE }),
@@ -62,63 +56,6 @@ export const useOrderListStore = create((set, get) => ({
     }
   },
 
-  fetchOrders: async () => {
-    if (!sessionStorage.getItem("access_token")) {
-      set({ orders: [], total: 0, fetching: false, fetchError: null });
-      return;
-    }
-
-    const state = get();
-    const requestId = state.requestId + 1;
-    const isTailor = isTailorRole();
-
-    set({ requestId, fetching: true, fetchError: null });
-
-    try {
-      const params = buildOrdersListParams({
-        page: state.page,
-        limit: state.limit,
-        isTailor,
-        filterStatus: state.filterStatus,
-        debouncedSearch: state.debouncedSearch,
-        filterPayment: state.filterPayment,
-        filterTailor: state.filterTailor,
-        dateFrom: state.dateFrom,
-        dateTo: state.dateTo,
-        needsManualAssignment: state.needsManualAssignment,
-      });
-      const data = await getOrdersList({
-        endpoint: resolveOrdersEndpoint(),
-        params,
-      });
-
-      if (get().requestId !== requestId) return;
-
-      const list = Array.isArray(data.orders) ? data.orders : [];
-      set({ orders: list, total: data.total ?? list.length, fetching: false });
-    } catch (err) {
-      if (get().requestId !== requestId) return;
-
-      const isAuth = err.response?.status === 401 || err.response?.status === 403;
-      if (isAuth) {
-        set({ orders: [], fetchError: "Session expired - please log in again.", fetching: false });
-        return;
-      }
-
-      const cached = readCachedOrders();
-      if (cached) {
-        set({
-          orders: cached.orders || [],
-          total: cached.total ?? (cached.orders || []).length,
-          fetchError: "Could not reach the order service - showing cached data.",
-          fetching: false,
-        });
-      } else {
-        set({ fetchError: "Could not reach the order service.", fetching: false });
-      }
-    }
-  },
-
   confirmCancel: async (reason) => {
     const { cancelTarget } = get();
     if (!reason || !cancelTarget) return;
@@ -126,7 +63,9 @@ export const useOrderListStore = create((set, get) => ({
     try {
       await cancelOrder(cancelTarget.Id, reason);
       set({ cancelTarget: null });
-      get().fetchOrders();
+      // Refetching the list is the caller's job now (useOrderList.js wraps
+      // this and invalidates the React Query cache the page actually reads
+      // from - this store no longer has its own order list to refresh).
     } catch (err) {
       notifyError(extractErrorMessage(err, "Failed to cancel order."));
     } finally {
