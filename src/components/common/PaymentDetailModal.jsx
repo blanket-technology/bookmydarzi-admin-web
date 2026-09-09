@@ -94,12 +94,18 @@ export default function PaymentDetailModal({ orderId, orderCode, onClose }) {
   // Backend PaymentResponse field names:
   //   TransactionId  = Razorpay payment_id (pay_xxx) / COD-<code>
   //   GatewayOrderId = Razorpay order_id  (order_xxx)
+  //   PaymentType    = booking | balance | cod (Payment.PaymentType column) -
+  //                     the actual "is this COD" signal. Falls back to the
+  //                     TransactionId prefix only for rows from before this
+  //                     field was added to the response.
   const paymentId = payment?.TransactionId ?? payment?.razorpay_payment_id;
   const gatewayOrderId =
     payment?.GatewayOrderId ??
     payment?.razorpay_order_id ??
     payment?.SessionData?.razorpay_order_id;
-  const isCod = typeof paymentId === "string" && paymentId.startsWith("COD-");
+  const isCod = payment?.PaymentType
+    ? payment.PaymentType === "cod"
+    : typeof paymentId === "string" && paymentId.startsWith("COD-");
   const status = (payment?.Status || "").toLowerCase();
 
   // A Razorpay-method payment stuck at "initiated" with no Payment ID means
@@ -162,16 +168,25 @@ export default function PaymentDetailModal({ orderId, orderCode, onClose }) {
                 </div>
               )}
 
-              {/* Summary facts */}
+              {/* Summary facts - Method (the real gateway/collection value,
+                  e.g. "Cod"/"Razorpay") and Type (booking vs. balance vs.
+                  cod - a different concept) are kept as separate facts, not
+                  merged into one "Method" field that used to silently
+                  overwrite the real Method value with "Pay on Delivery"
+                  whenever isCod was true. */}
               <div className="grid grid-cols-2 gap-4">
                 <Fact
                   label="Method"
                   value={
                     <span className="flex items-center gap-1.5">
                       {isCod ? <Truck size={14} className="text-orange-500" /> : <CreditCard size={14} className="text-blue-500" />}
-                      {isCod ? "Pay on Delivery" : titleCase(payment?.Method) || "-"}
+                      {titleCase(payment?.Method) || "-"}
                     </span>
                   }
+                />
+                <Fact
+                  label="Type"
+                  value={isCod ? "Pay on Delivery" : "Online"}
                 />
                 <Fact
                   label="Created"

@@ -468,7 +468,7 @@ export default function BridgeEmployeeDetailPage() {
                 )}
               </div>
             }
-            title={staff.full_name || "-"}
+            title={staff.full_name || "N/A"}
             badges={
               <>
                 <StatusBadge status="employee" label="Employee" />
@@ -480,7 +480,7 @@ export default function BridgeEmployeeDetailPage() {
                 </span>
               </>
             }
-            metaLine={<>#{formatEmployeeId(staff.id, staff.user_code)} &nbsp;·&nbsp; {staff.email || "-"} &nbsp;·&nbsp; {staff.mobile || "-"}</>}
+            metaLine={<>#{formatEmployeeId(staff.id, staff.user_code)} &nbsp;·&nbsp; {staff.email || "N/A"} &nbsp;·&nbsp; {staff.mobile || "N/A"}</>}
             factsRow={
               <>
                 <span className="flex items-center gap-1.5"><Calendar size={11} /> Joined {staff.created_at ? formatDate(staff.created_at) : "-"}</span>

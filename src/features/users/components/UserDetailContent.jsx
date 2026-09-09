@@ -154,7 +154,7 @@ export default function UserDetailContent({
                 )}
               </div>
             }
-            title={user.FullName || "-"}
+            title={user.FullName || "N/A"}
             badges={
               <>
                 <StatusBadge status={user.Role?.toLowerCase()} label={ROLE_LABEL[user.Role?.toLowerCase()] ?? user.Role} />
@@ -163,7 +163,7 @@ export default function UserDetailContent({
                 </span>
               </>
             }
-            metaLine={<>#{formatEntityId(user.Role?.toLowerCase(), user.Id, user.UserCode)} &nbsp;·&nbsp; {user.Email || "-"} &nbsp;·&nbsp; {user.Mobile || "-"}</>}
+            metaLine={<>#{formatEntityId(user.Role?.toLowerCase(), user.Id, user.UserCode)} &nbsp;·&nbsp; {user.Email || "N/A"} &nbsp;·&nbsp; {user.Mobile || "N/A"}</>}
             factsRow={
               <>
                 <span className="flex items-center gap-1.5"><Calendar size={11} /> Joined {user.CreatedAt ? formatDate(user.CreatedAt) : "-"}</span>

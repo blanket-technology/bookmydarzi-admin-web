@@ -556,7 +556,7 @@ export default function TailorFullDetailsPage() {
               )}
             </div>
           }
-          title={form.full_name || "-"}
+          title={form.full_name || "N/A"}
           badges={
             <>
               <StatusBadge status={form.status === "Active" ? "active" : "inactive"} label={form.status || "-"} />
@@ -565,7 +565,7 @@ export default function TailorFullDetailsPage() {
               </span>
             </>
           }
-          metaLine={<>{formatTailorId(tailorId, liveData.user_code || raw.user_code, form.location)} &nbsp;·&nbsp; {form.email || "-"} &nbsp;·&nbsp; {form.mobile || "-"}</>}
+          metaLine={<>{formatTailorId(tailorId, liveData.user_code || raw.user_code, form.location)} &nbsp;·&nbsp; {form.email || "N/A"} &nbsp;·&nbsp; {form.mobile || "N/A"}</>}
           factsRow={
             <>
               <span className="flex items-center gap-1.5"><Scissors size={11} /> {form.specialization || "Specialization not set"}</span>

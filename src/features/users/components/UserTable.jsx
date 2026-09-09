@@ -59,7 +59,8 @@ export default function UserTable({
       emptyMessage={`No accounts found${roleFilter ? ` with role "${activeRoleLabel}"` : ""}${search ? ` for "${search}"` : ""}.`}
       pagination={{ page, total, limit, onPageChange, onLimitChange }}
       renderRow={(u) => {
-        const initials = (u.FullName || u.Email || "?").trim()[0].toUpperCase();
+        const displayName = u.FullName || "Unnamed";
+        const initials = (u.FullName || u.Email || "U").trim()[0].toUpperCase();
         const tone = avatarTone(String(u.Id ?? u.Email ?? initials));
         return (
           <tr
@@ -81,14 +82,14 @@ export default function UserTable({
                     />
                   )}
                 </div>
-                <span className="font-semibold text-gray-800 whitespace-nowrap">{u.FullName || "Unnamed"}</span>
+                <span className="font-semibold text-gray-800 whitespace-nowrap">{displayName}</span>
               </div>
             </td>
-            <td className="px-4 py-3 text-gray-500">{u.Email || "-"}</td>
-            <td className="px-4 py-3 text-gray-500 font-mono text-[13px]">{u.Mobile || "-"}</td>
+            <td className="px-4 py-3 text-gray-500">{u.Email || <span className="text-gray-400">N/A</span>}</td>
+            <td className="px-4 py-3 text-gray-500 font-mono text-[13px]">{u.Mobile || <span className="text-gray-400 font-sans">N/A</span>}</td>
             <td className="px-4 py-3">
               <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap ${ROLE_BADGE[u.Role?.toLowerCase()] || "bg-gray-100 text-gray-600"}`}>
-                {ROLE_LABEL[u.Role?.toLowerCase()] ?? u.Role ?? "-"}
+                {ROLE_LABEL[u.Role?.toLowerCase()] ?? u.Role ?? "N/A"}
               </span>
             </td>
             <td className="px-4 py-3">
@@ -98,7 +99,7 @@ export default function UserTable({
               </div>
             </td>
             <td className="px-4 py-3 text-gray-400 whitespace-nowrap text-[13px]">
-              {u.CreatedAt ? formatDate(u.CreatedAt) : "-"}
+              {u.CreatedAt ? formatDate(u.CreatedAt) : "N/A"}
             </td>
             <td className="px-2 py-3 text-right w-6">
               <ChevronRight size={15} className="text-gray-300 group-hover:text-teal-500 transition-colors" />
