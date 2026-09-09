@@ -19,9 +19,16 @@ export const OVERRIDE_STATUSES = ["initiated", "success", "failed", "pending"];
 // options and are removed here; the remaining statuses use plain-language
 // labels. Backend filter values are unchanged (advance_pending = the single
 // pending online payment).
+// "Initiated" (the per-payment-record status shown in Payment Details, see
+// PaymentStatus.INITIATED on the backend) has no filter option of its own
+// because it isn't an order-level settlement bucket - an order with an
+// Initiated payment is still "Online Payment Pending" at the order level
+// (advance_pending), which this filter already selects. The label spells
+// that mapping out so it isn't a dead end for an admin searching for
+// "Initiated" payments specifically.
 export const PAYMENT_STATUS_FILTER_OPTIONS = [
   { value: "", label: "All Status" },
-  { value: "advance_pending", label: "Online Payment Pending" },
+  { value: "advance_pending", label: "Online Payment Pending (incl. Initiated)" },
   { value: "fully_paid", label: "Paid" },
   { value: "advance_failed", label: "Failed" },
   { value: "cod_pending", label: "Pay on Delivery" },

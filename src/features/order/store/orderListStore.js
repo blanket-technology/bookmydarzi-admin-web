@@ -32,6 +32,7 @@ export const useOrderListStore = create((set, get) => ({
   cancelTarget: null,
   cancelling: false,
   requestId: 0,
+  tailorsRequestId: 0,
 
   setFilterStatus: (filterStatus) => set({ filterStatus, page: DEFAULT_PAGE }),
   setFilterPayment: (filterPayment) => set({ filterPayment, page: DEFAULT_PAGE }),
@@ -48,11 +49,15 @@ export const useOrderListStore = create((set, get) => ({
 
   fetchTailors: async () => {
     if (isTailorRole()) return;
+    const tailorsRequestId = get().tailorsRequestId + 1;
+    set({ tailorsRequestId });
     try {
       const role = (JSON.parse(sessionStorage.getItem("user") || "{}").Role || "").toLowerCase();
       const tailors = await getTailorsForFilter(role);
+      if (get().tailorsRequestId !== tailorsRequestId) return;
       set({ tailors });
     } catch {
+      if (get().tailorsRequestId !== tailorsRequestId) return;
       set({ tailors: [] });
     }
   },

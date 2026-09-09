@@ -1,11 +1,7 @@
-import { Loader2, AlertCircle, RefreshCw, ArrowLeft } from "lucide-react";
+import { Loader2, AlertCircle, RefreshCw } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader.jsx";
-import CatalogBreadcrumb from "../components/CatalogBreadcrumb.jsx";
 import CatalogModals from "../components/CatalogModals.jsx";
-import CategoryGrid from "../components/CategoryGrid.jsx";
-import ServiceLineGrid from "../components/ServiceLineGrid.jsx";
-import StitchTypeList from "../components/StitchTypeList.jsx";
-import ServiceDetailView from "../components/ServiceDetailView.jsx";
+import CatalogTree from "../components/CatalogTree.jsx";
 import useCatalog from "../hooks/useCatalog.js";
 
 export default function CatalogPage() {
@@ -13,24 +9,14 @@ export default function CatalogPage() {
     sortedCategories,
     loading,
     error,
-    level,
-    selectedCategory,
-    selectedLine,
-    selectedType,
     modal,
     deleting,
     restoringId,
     showInactive,
-    showInactiveLines,
-    crumbs,
     activeCategories,
     totalLines,
-    setSelectedCategory,
-    setSelectedLine,
-    setSelectedType,
     setModal,
     setShowInactive,
-    setShowInactiveLines,
     closeModal,
     refresh,
     loadCatalog,
@@ -40,12 +26,7 @@ export default function CatalogPage() {
     handleRestoreCategory,
     handleRestoreLine,
     handleRestoreService,
-    handleCrumbNav,
-    handleBack,
-    openCreateServiceModal,
   } = useCatalog();
-
-  const openServiceModal = (prefillName) => setModal(openCreateServiceModal(prefillName));
 
   return (
     <>
@@ -64,27 +45,11 @@ export default function CatalogPage() {
           title="Service Catalog"
           subtitle={`${activeCategories.length} categories · ${totalLines} sub-categories`}
           actions={
-            <>
-              {level > 0 && (
-                <button
-                  onClick={handleBack}
-                  className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                >
-                  <ArrowLeft size={13} /> Back
-                </button>
-              )}
-              <button onClick={loadCatalog} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
-                <RefreshCw size={13} /> Refresh
-              </button>
-            </>
+            <button onClick={loadCatalog} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <RefreshCw size={13} /> Refresh
+            </button>
           }
         />
-
-        {level > 0 && (
-          <div className="bg-white rounded-xl px-4 py-3 mb-4 shadow-sm border border-gray-100">
-            <CatalogBreadcrumb crumbs={crumbs} onNavigate={handleCrumbNav} />
-          </div>
-        )}
 
         {error && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
@@ -98,67 +63,30 @@ export default function CatalogPage() {
             <p className="text-gray-500 text-sm">Loading catalog…</p>
           </div>
         ) : (
-          <>
-            {level === 0 && (
-              <CategoryGrid
-                categories={sortedCategories}
-                onSelect={(cat) => setSelectedCategory(cat)}
-                onEdit={(cat) => setModal({ type: "edit-category", data: cat })}
-                onDelete={(cat) => setModal({ type: "delete-category", data: cat })}
-                onAdd={() => setModal({ type: "create-category" })}
-                showInactive={showInactive}
-                onToggleShowInactive={setShowInactive}
-                onRestore={handleRestoreCategory}
-                restoringId={restoringId}
-                onReordered={() => loadCatalog()}
-              />
-            )}
-
-            {level === 1 && selectedCategory && (
-              <ServiceLineGrid
-                category={selectedCategory}
-                onSelect={(line) => setSelectedLine(line)}
-                onEdit={(line) => setModal({ type: "edit-line", data: line, catName: selectedCategory.name })}
-                onDelete={(line) => setModal({ type: "delete-line", data: line })}
-                onDeleteService={(svc) => setModal({ type: "delete-service", data: svc })}
-                onAdd={() => setModal({ type: "create-line", categoryId: selectedCategory.id, catName: selectedCategory.name })}
-                onRestoreLine={handleRestoreLine}
-                onRestoreService={handleRestoreService}
-                restoringId={restoringId}
-                showInactive={showInactiveLines}
-                onToggleShowInactive={setShowInactiveLines}
-                onReordered={() => loadCatalog()}
-              />
-            )}
-
-            {level === 2 && selectedLine && selectedCategory && (
-              <StitchTypeList
-                line={selectedLine}
-                onEditItem={(svc) => setModal({ type: "edit-service", data: svc, lineName: selectedLine.name })}
-                onDeleteItem={(svc) => setModal({ type: "delete-service", data: svc })}
-                onAddType={() => setModal({ type: "add-type", categoryId: selectedCategory.id, lineId: selectedLine.id, lineName: selectedLine.name })}
-                onAddSingleItem={(prefillName) => openServiceModal(prefillName ?? "")}
-                onSelectType={(g) => setSelectedType(g)}
-              />
-            )}
-
-            {level === 3 && selectedType && selectedLine && selectedCategory && (
-              <ServiceDetailView
-                group={selectedType}
-                line={selectedLine}
-                category={selectedCategory}
-                onEditItem={(svc) => setModal({ type: "edit-service", data: svc, lineName: selectedLine.name })}
-                onDeleteItem={(svc) => setModal({ type: "delete-service", data: svc })}
-                onAddSingleItem={(prefillName) => openServiceModal(prefillName ?? "")}
-              />
-            )}
-          </>
-        )}
-
-        {level === 0 && !loading && (
-          <p className="text-xs text-gray-400 text-center mt-6">
-            Click a category card to manage its sub-categories and items
-          </p>
+          <CatalogTree
+            categories={sortedCategories}
+            onAddCategory={() => setModal({ type: "create-category" })}
+            onEditCategory={(cat) => setModal({ type: "edit-category", data: cat })}
+            onDeleteCategory={(cat) => setModal({ type: "delete-category", data: cat })}
+            onRestoreCategory={handleRestoreCategory}
+            onAddLine={(cat) => setModal({ type: "create-line", categoryId: cat.id, catName: cat.name })}
+            onEditLine={(line, cat) => setModal({ type: "edit-line", data: line, catName: cat.name })}
+            onDeleteLine={(line) => setModal({ type: "delete-line", data: line })}
+            onRestoreLine={handleRestoreLine}
+            onAddService={(cat, line) => setModal({
+              type: "create-service",
+              categoryId: cat.id,
+              lineId: line?.id ?? null,
+              lineName: line?.name ?? null,
+            })}
+            onEditService={(svc, parent) => setModal({ type: "edit-service", data: svc, lineName: parent.lineName })}
+            onDeleteService={(svc) => setModal({ type: "delete-service", data: svc })}
+            onRestoreService={handleRestoreService}
+            restoringId={restoringId}
+            showInactive={showInactive}
+            onToggleShowInactive={setShowInactive}
+            onReordered={() => loadCatalog()}
+          />
         )}
       </div>
     </>

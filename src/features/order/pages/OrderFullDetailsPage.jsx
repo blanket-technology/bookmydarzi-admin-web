@@ -140,8 +140,8 @@ function StatusStepper({ status }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5">
-      <div className="flex items-center">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 overflow-x-auto">
+      <div className="flex items-center min-w-[560px] sm:min-w-0">
         {JOURNEY.map((step, i) => {
           const done = current > i;
           const active = current === i;
@@ -320,6 +320,12 @@ export default function OrderFullDetailsPage() {
   // Fetch-on-order-change effect; clearing stale errors before the new
   // requests land prevents a previous order's photo/tracking error from
   // lingering on screen after navigating to a different order.
+  //
+  // Depends on order.Status (not just order.Id): refresh() after a workflow
+  // action re-GETs the order and calls setOrder() with a fresh object of the
+  // SAME Id, so Id-only would never re-run this and the Order Timeline
+  // (sourced from `tracking`) would go stale even though Pickup Info -
+  // sourced directly from `order` - updates immediately.
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!order?.Id) return;
@@ -343,7 +349,7 @@ export default function OrderFullDetailsPage() {
         setTracking(null);
         setTrackingError(extractErrorMessage(err, "Failed to load tracking info."));
       });
-  }, [order?.Id]);
+  }, [order?.Id, order?.Status]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // Tailor-only upload - backend only accepts this while the order is in
@@ -546,6 +552,17 @@ export default function OrderFullDetailsPage() {
     }
     runAction(() => runOrderAction(api, action, order, input));
   };
+
+  // The "Assign Tailor" workflow dialog has its own tailor <select>,
+  // separate from the sidebar Tailor Assignment selector - it doesn't share
+  // that selector's onFocus trigger, so without this it could open with no
+  // options at all. loadTailors() is idempotent (guarded by tailorsLoaded),
+  // so calling it here is a no-op if the sidebar selector already populated it.
+  useEffect(() => {
+    if (pendingAction?.requiresInput?.includes("tailor_id")) {
+      loadTailors();
+    }
+  }, [pendingAction, loadTailors]);
 
   if (!order) {
     return (
@@ -899,7 +916,7 @@ export default function OrderFullDetailsPage() {
               title="Notes"
               accent={theme.accent}
               right={
-                !editingNotes ? (
+                !editingNotes && !isTailor ? (
                   <button
                     onClick={() => setEditingNotes(true)}
                     className="flex items-center gap-1.5 text-xs font-semibold text-teal-700 hover:text-teal-800"
@@ -909,7 +926,7 @@ export default function OrderFullDetailsPage() {
                 ) : null
               }
             >
-              {editingNotes ? (
+              {editingNotes && !isTailor ? (
                 <div className="space-y-4">
                   {[
                     { key: "description", label: "Description", ph: "Order description…" },
@@ -1312,7 +1329,7 @@ export default function OrderFullDetailsPage() {
                   </span>
                 </div>
               )}
-              {(order.NeedsManualAssignment ||
+              {!isTailor && (order.NeedsManualAssignment ||
                 ["searching_tailor", "broadcasted"].includes(status)) && (
                 <ActionButton
                   label={
@@ -1337,7 +1354,7 @@ export default function OrderFullDetailsPage() {
                     : "Not assigned"
                 }
               />
-              {!["delivered", "cancelled", "order_rejected"].includes(status) && (
+              {!isTailor && !["delivered", "cancelled", "order_rejected"].includes(status) && (
                 <div className="mt-4 flex flex-col gap-2">
                   <select
                     value={selectedTailorId}
@@ -1465,7 +1482,12 @@ export default function OrderFullDetailsPage() {
                 Cancel
               </button>
               <button
-                disabled={pendingAction.requiresReason && !actionInput.reason?.trim()}
+                disabled={
+                  (pendingAction.requiresReason && !actionInput.reason?.trim()) ||
+                  (pendingAction.requiresInput || []).some(
+                    (field) => !String(actionInput[field] ?? "").trim(),
+                  )
+                }
                 onClick={() => {
                   const action = pendingAction;
                   const input = actionInput;

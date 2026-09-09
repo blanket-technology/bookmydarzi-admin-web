@@ -295,7 +295,7 @@ export default function ConversationView({ session, onRefresh, onResolve, onBack
               </h3>
               {session.order_id && (
                 <span className="text-[10px] bg-teal-50 text-teal-700 font-semibold px-2 py-0.5 rounded-full">
-                  Order #{session.order_id}
+                  Order {session.order_code || `#${session.order_id}`}
                 </span>
               )}
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${

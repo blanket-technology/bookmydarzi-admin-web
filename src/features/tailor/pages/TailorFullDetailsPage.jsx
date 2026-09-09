@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import api from "../../../services/api";
-import { extractErrorMessage, formatDate, formatDateTime, formatCurrency } from "../../../utils/formatters";
+import { extractErrorMessage, formatDate, formatDateTime, formatCurrency, formatTailorId } from "../../../utils/formatters";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Pagination from "../../../components/common/Pagination";
 import { DonutChart, HBarChart, GaugeChart } from "../../../components/common/MiniCharts";
@@ -565,7 +565,7 @@ export default function TailorFullDetailsPage() {
               </span>
             </>
           }
-          metaLine={<>#{tailorId} &nbsp;·&nbsp; {form.email || "-"} &nbsp;·&nbsp; {form.mobile || "-"}</>}
+          metaLine={<>{formatTailorId(tailorId, liveData.user_code || raw.user_code, form.location)} &nbsp;·&nbsp; {form.email || "-"} &nbsp;·&nbsp; {form.mobile || "-"}</>}
           factsRow={
             <>
               <span className="flex items-center gap-1.5"><Scissors size={11} /> {form.specialization || "Specialization not set"}</span>

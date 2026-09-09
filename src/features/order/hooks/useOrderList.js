@@ -48,7 +48,7 @@ export default function useOrderList() {
   const setPage = useOrderListStore((s) => s.setPage);
   const setLimit = useOrderListStore((s) => s.setLimit);
   const setCancelTarget = useOrderListStore((s) => s.setCancelTarget);
-  const confirmCancel = useOrderListStore((s) => s.confirmCancel);
+  const storeConfirmCancel = useOrderListStore((s) => s.confirmCancel);
   const clearAdvancedFilters = useOrderListStore((s) => s.clearAdvancedFilters);
   const fetchTailors = useOrderListStore((s) => s.fetchTailors);
 
@@ -135,6 +135,18 @@ export default function useOrderList() {
   const handleFilterStatusChange = (value) => {
     setFilterStatus(value);
     setSearchParams(value ? { status: value } : {});
+  };
+
+  // The Zustand orderListStore's own confirmCancel() refetches into its OWN
+  // unused `orders` array (a leftover from before this page moved to React
+  // Query) - this page renders `orders` from useQuery above, which that
+  // refetch never touches, so a just-cancelled order kept showing its old
+  // status until something else (WS event, manual Refresh, full remount)
+  // happened to invalidate the query. Explicitly invalidate here so the
+  // status update is reflected immediately, same as the WS live-event path.
+  const confirmCancel = async (reason) => {
+    await storeConfirmCancel(reason);
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
   };
 
   return {

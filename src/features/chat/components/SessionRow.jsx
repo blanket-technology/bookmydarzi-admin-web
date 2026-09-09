@@ -38,7 +38,7 @@ export default function SessionRow({ session, isActive, onClick }) {
           </div>
           {session.order_id && (
             <p className="text-[10px] text-teal-600 font-medium mb-0.5">
-              Order #{session.order_id}
+              Order {session.order_code || `#${session.order_id}`}
             </p>
           )}
           <span

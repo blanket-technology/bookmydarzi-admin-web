@@ -226,7 +226,10 @@ export function getOrderActions(role, order, payment) {
     actions.push({
       id: step.id,
       label: step.label,
-      endpoint: (o) => `/admin/orders/${o.Id}/status`, // tailor app normally uses its own endpoint; admin panel impersonation not expected - kept for completeness/back-office use
+      // Dedicated tailor status-transition endpoint (require_roles(TAILOR) +
+      // assert_can_update_order_status - only the assigned tailor may call
+      // this), NOT /admin/orders/{id}/status which rejects a tailor caller.
+      endpoint: (o) => `/orders/${o.Id}/status`,
       method: "patch",
       body: { status: step.target },
       group: "primary",

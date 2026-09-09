@@ -96,6 +96,7 @@ export function buildCreateEmployeePayload(form) {
   const nameParts = form.name.trim().split(" ");
   const firstName = nameParts[0] || form.name;
   const lastName = nameParts.slice(1).join(" ") || ".";
+  const usedDefaultPassword = !form.password.trim();
   return {
     first_name: firstName,
     last_name: lastName,
@@ -104,5 +105,10 @@ export function buildCreateEmployeePayload(form) {
     password: form.password.trim() || DEFAULT_PASSWORD,
     role: "employee",
     is_active: true,
+    // The account must change this password on its first login - see
+    // MustChangePassword on the backend User model. Only true when the
+    // admin left the field blank and got the shared default; an admin-typed
+    // password is trusted as intentional and never forces a reset.
+    is_default_password: usedDefaultPassword,
   };
 }

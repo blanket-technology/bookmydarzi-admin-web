@@ -46,3 +46,23 @@ export function validateOfferDates(form) {
   }
   return null;
 }
+
+// Mirrors OfferCreateRequest/OfferUpdateRequest's model_validator on the
+// backend (app/schemas/home_admin.py) - a mismatched/missing discount value
+// for the selected discount_type is a hard 422 there. Catching it here means
+// an admin sees the specific field error inline instead of a generic "Save
+// failed" after the request round-trips.
+export function validateOfferDiscount(form) {
+  if (form.discount_type === "flat") {
+    const amount = Number(form.discount_amount);
+    if (form.discount_amount === "" || !Number.isFinite(amount) || amount <= 0) {
+      return "Discount amount must be a positive number.";
+    }
+  } else {
+    const percent = Number(form.discount_percent);
+    if (form.discount_percent === "" || !Number.isFinite(percent) || percent <= 0 || percent > 100) {
+      return "Discount percent must be between 0 and 100.";
+    }
+  }
+  return null;
+}

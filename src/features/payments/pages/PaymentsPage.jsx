@@ -3,7 +3,9 @@ import PageHeader from "../../../components/common/PageHeader.jsx";
 import Pagination from "../../../components/common/Pagination.jsx";
 import PaymentDetailModal from "../../../components/common/PaymentDetailModal.jsx";
 import RefundModal from "../components/RefundModal.jsx";
+import StatusOverrideModal from "../components/StatusOverrideModal.jsx";
 import PaymentsTable from "../components/PaymentsTable.jsx";
+import { PAYMENT_STATUS_FILTER_OPTIONS } from "../constants/paymentConstants.js";
 import usePayments from "../hooks/usePayments.js";
 
 // Group a raw payment/settlement status into the four states an ops team
@@ -50,11 +52,15 @@ export default function PaymentsPage() {
     canManage,
     refundOrderId,
     detailOrderId,
+    overrideOrderId,
+    syncingOrderId,
     setPage,
     setSearch,
     setRefundOrderId,
     setDetailOrderId,
+    setOverrideOrderId,
     fetchOrders,
+    syncPayment,
     handleLimitChange,
     handleFilterStatusChange,
     isRefundable,
@@ -83,6 +89,13 @@ export default function PaymentsPage() {
           onClose={() => setDetailOrderId(null)}
         />
       )}
+      {overrideOrderId && (
+        <StatusOverrideModal
+          orderId={overrideOrderId}
+          onClose={() => setOverrideOrderId(null)}
+          onDone={fetchOrders}
+        />
+      )}
       <div className="p-3 sm:p-5 w-full min-h-screen bg-gray-100">
         <PageHeader
           title="Payments"
@@ -104,17 +117,9 @@ export default function PaymentsPage() {
                 onChange={(e) => handleFilterStatusChange(e.target.value)}
                 className="px-2.5 py-1.5 rounded-lg text-gray-800 text-xs outline-none bg-white font-semibold"
               >
-                {/* The advance/balance split is retired (see backend
-                    OrderPaymentStatus note) - full amount is one payment.
-                    So we drop the dead advance_paid/balance_pending options and
-                    relabel the remaining statuses in plain language. The backend
-                    filter values are unchanged (advance_pending = the single
-                    pending online payment). */}
-                <option value="">All Status</option>
-                <option value="advance_pending">Online Payment Pending</option>
-                <option value="fully_paid">Paid</option>
-                <option value="advance_failed">Failed</option>
-                <option value="cod_pending">Pay on Delivery</option>
+                {PAYMENT_STATUS_FILTER_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
               <button onClick={fetchOrders} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
                 <RefreshCw size={13} /> Refresh
@@ -146,6 +151,9 @@ export default function PaymentsPage() {
             canManage={canManage}
             onViewDetail={setDetailOrderId}
             onRefund={setRefundOrderId}
+            onSync={syncPayment}
+            onOverride={setOverrideOrderId}
+            syncingOrderId={syncingOrderId}
             isRefundable={isRefundable}
           />
           {!loading && total > 0 && (

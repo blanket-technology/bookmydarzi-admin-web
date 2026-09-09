@@ -74,6 +74,10 @@ export const useAddTailorStore = create((set, get) => ({
         password: form.password.trim() || DEFAULT_TAILOR_PASSWORD,
         role: "tailor",
         is_active: true,
+        // The account must change this password on its first login - see
+        // MustChangePassword on the backend User model. Only true when the
+        // admin left the field blank and got the shared default password.
+        is_default_password: !form.password.trim(),
         specialization: form.specialization.trim() || undefined,
         experience: form.experience !== "" ? Number(form.experience) : undefined,
         location: form.location.trim() || undefined,

@@ -32,15 +32,21 @@ export default function RefundModal({ orderId, onClose, onDone }) {
 
         if (pmtRes.status === "fulfilled") {
           const pmt = pmtRes.value;
-          setPayment(pmt);
           const pmtId = getPaymentId(pmt);
           if (pmtId) {
             try {
               const refundList = await paymentService.getRefunds(pmtId);
               setRefunds(refundList);
-            } catch {
-              // Refund history is optional - ignore errors
+              setPayment(pmt);
+            } catch (refundErr) {
+              // Refund history failed to load - refuse to compute a
+              // refundable amount at all rather than silently treating the
+              // full original payment as refundable (over-refund risk if
+              // this payment already has prior refunds we can't see).
+              setFetchError(extractErrorMessage(refundErr, "Could not load refund history - refund is disabled until this can be verified."));
             }
+          } else {
+            setPayment(pmt);
           }
         } else {
           setFetchError(extractErrorMessage(pmtRes.reason, "Could not load payment details."));

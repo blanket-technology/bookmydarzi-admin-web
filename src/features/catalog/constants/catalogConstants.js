@@ -8,4 +8,5 @@ export const CATALOG_IMAGE_UPLOAD_PATH = "/catalog/upload-image";
 export const REORDER_PATHS = {
   categories: "/catalog/categories/reorder",
   serviceLines: "/catalog/service-lines/reorder",
+  services: "/catalog/services/reorder",
 };

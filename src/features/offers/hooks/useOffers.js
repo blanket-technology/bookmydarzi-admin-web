@@ -8,6 +8,7 @@ import {
   filterOffersByExpiry,
   offerToForm,
   validateOfferDates,
+  validateOfferDiscount,
 } from "../utils/offerUtils.js";
 import { useOfferStore } from "../store/offerStore.js";
 import { offersQueryKey } from "../../../services/queryKeys.js";
@@ -93,6 +94,11 @@ export default function useOffers() {
     const dateError = validateOfferDates(form);
     if (dateError) {
       setSaveMsg({ type: "error", text: dateError });
+      return;
+    }
+    const discountError = validateOfferDiscount(form);
+    if (discountError) {
+      setSaveMsg({ type: "error", text: discountError });
       return;
     }
     setSaveMsg(null);

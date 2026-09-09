@@ -1,5 +1,7 @@
-import { Loader2, RotateCcw } from "lucide-react";
+import { Loader2, RotateCcw, RefreshCw, SlidersHorizontal } from "lucide-react";
 import StatusBadge from "../../../components/common/StatusBadge.jsx";
+
+const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "advance_pending"]);
 
 export default function PaymentsTable({
   orders,
@@ -7,12 +9,15 @@ export default function PaymentsTable({
   canManage,
   onViewDetail,
   onRefund,
+  onSync,
+  onOverride,
+  syncingOrderId,
   isRefundable,
 }) {
   // The Actions column only earns its place when at least one row on this
   // page actually has an action to offer - otherwise every cell would just
   // be empty padding. Row count stays consistent for colSpan either way.
-  const hasAnyAction = canManage && orders.some((order) => isRefundable(order));
+  const hasAnyAction = canManage && orders.length > 0;
   const columnCount = hasAnyAction ? 6 : 5;
 
   return (
@@ -55,12 +60,29 @@ export default function PaymentsTable({
                   />
                 </td>
                 {hasAnyAction && (
-                  <td className="px-4 py-2.5 text-center" onClick={(e) => e.stopPropagation()}>
-                    {canManage && isRefundable(order) && (
-                      <button onClick={() => onRefund(order.Id)} title="Issue refund" className="flex items-center gap-1 px-2 py-1 mx-auto text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg font-semibold">
-                        <RotateCcw size={11} /> Refund
-                      </button>
-                    )}
+                  <td className="px-4 py-2.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-center gap-1.5 flex-wrap">
+                      {canManage && isRefundable(order) && (
+                        <button onClick={() => onRefund(order.Id)} title="Issue refund" className="flex items-center gap-1 px-2 py-1 text-rose-600 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-lg font-semibold">
+                          <RotateCcw size={11} /> Refund
+                        </button>
+                      )}
+                      {canManage && RECONCILABLE_STATUSES.has((order.SettlementStatus || "").toLowerCase()) && (
+                        <button
+                          onClick={() => onSync(order.Id)}
+                          disabled={syncingOrderId === order.Id}
+                          title="Re-check payment status with the gateway"
+                          className="flex items-center gap-1 px-2 py-1 text-blue-600 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-lg font-semibold disabled:opacity-60"
+                        >
+                          <RefreshCw size={11} className={syncingOrderId === order.Id ? "animate-spin" : ""} /> Sync
+                        </button>
+                      )}
+                      {canManage && (
+                        <button onClick={() => onOverride(order.Id)} title="Manually override payment status (superadmin)" className="flex items-center gap-1 px-2 py-1 text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 rounded-lg font-semibold">
+                          <SlidersHorizontal size={11} /> Override
+                        </button>
+                      )}
+                    </div>
                   </td>
                 )}
               </tr>

@@ -52,34 +52,3 @@ export async function updateService(id, payload) {
 export async function deleteService(id) {
   await api.delete(`/catalog/services/${id}`);
 }
-
-export async function createTypeGroupServices({ categoryId, serviceLineId, normalName, designerName, normalPrice, designerPrice, normalImage, designerImage, deliveryDays, addNormal, addDesigner }) {
-  const base = {
-    category_id: Number(categoryId),
-    service_line_id: Number(serviceLineId),
-    description: "",
-    estimated_delivery_days: Number(deliveryDays) || 7,
-    display_order: 0,
-    is_active: true,
-  };
-  if (addNormal) {
-    await createService({
-      ...base,
-      name: normalName,
-      image_url: normalImage,
-      base_price: Number(normalPrice),
-      is_premium: false,
-      display_order: 1,
-    });
-  }
-  if (addDesigner) {
-    await createService({
-      ...base,
-      name: designerName,
-      image_url: designerImage,
-      base_price: Number(designerPrice),
-      is_premium: true,
-      display_order: 2,
-    });
-  }
-}

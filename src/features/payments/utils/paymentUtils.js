@@ -12,12 +12,17 @@ export function getPaymentId(payment) {
 export function calculateAlreadyRefunded(refunds) {
   return refunds
     .filter((r) => ["initiated", "processed"].includes(r.status))
-    .reduce((sum, r) => sum + (r.amount || 0), 0);
+    .reduce((sum, r) => {
+      const amount = Number.parseFloat(r.amount);
+      return sum + (Number.isFinite(amount) ? amount : 0);
+    }, 0);
 }
 
 export function calculateRefundableAmount(payment, refunds) {
   const alreadyRefunded = calculateAlreadyRefunded(refunds);
-  return payment ? Math.max(0, parseFloat(payment.Amount ?? 0) - alreadyRefunded) : 0;
+  const paid = Number.parseFloat(payment?.Amount);
+  if (!payment || !Number.isFinite(paid)) return 0;
+  return Math.max(0, paid - alreadyRefunded);
 }
 
 export function buildOrderListParams({ page, limit, filterStatus, debouncedSearch }) {
