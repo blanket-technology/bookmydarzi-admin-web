@@ -1,9 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff,
   CheckCircle2, XCircle, AlertCircle, RotateCcw, UserPlus, X, Bike,
   Briefcase, MapPin, Truck, Clock, Calendar, ArrowLeft,
-  ShieldCheck, CreditCard, FileText,
+  ShieldCheck, CreditCard, FileText, ChevronDown,
 } from "lucide-react";
 import { InputField, SelectField } from "../../../components/common/FormFields.jsx";
 import SectionHeader from "../../../components/common/SectionHeader.jsx";
@@ -13,6 +14,11 @@ import useAddBridge from "../hooks/useAddBridge.js";
 
 export default function AddBridgePage() {
   const navigate = useNavigate();
+  // None of these 6 fields are required by validate() - collapsed by
+  // default so creating an employee's login account is a 4-field, fast
+  // flow. Same fields, same functionality, just not front-loaded on every
+  // single "quick add" when most are filled in later anyway.
+  const [showProfessionalDetails, setShowProfessionalDetails] = useState(false);
   const {
     form,
     profile,
@@ -131,46 +137,62 @@ export default function AddBridgePage() {
                 </p>
               </div>
 
-              {/* ── Professional Details (optional) ── */}
+              {/* ── Professional Details (optional, collapsed by default) ── */}
               <div className="space-y-5">
-                <SectionHeader
-                  icon={Briefcase}
-                  title="Professional Details"
-                  subtitle="Optional - can also be filled in later from the employee's profile"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowProfessionalDetails((v) => !v)}
+                  className="w-full flex items-center justify-between pb-4 border-b-2 border-gray-100 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
+                      <Briefcase size={20} className="text-teal-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-800 text-base leading-tight">Professional Details</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">Optional - can also be filled in later from the employee's profile</p>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`text-gray-400 shrink-0 transition-transform ${showProfessionalDetails ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <InputField
-                    icon={Clock} name="experience_years" label="Experience (years)" placeholder="e.g. 3" type="number"
-                    value={profile.experience_years} onChange={(e) => setProfileField("experience_years", e.target.value)}
-                    required={false} touched={false}
-                  />
-                  <SelectField
-                    icon={Briefcase} name="bridge_type" label="Bridge Type" value={profile.bridge_type}
-                    onChange={(e) => setProfileField("bridge_type", e.target.value)}
-                    options={BRIDGE_TYPE_OPTIONS}
-                  />
-                  <InputField
-                    icon={MapPin} name="assigned_area" label="Assigned Area" placeholder="e.g. Noida Sector 62, Indirapuram"
-                    value={profile.assigned_area} onChange={(e) => setProfileField("assigned_area", e.target.value)}
-                    required={false} touched={false}
-                  />
-                  <InputField
-                    icon={Truck} name="vehicle_type" label="Vehicle Type" placeholder="e.g. Bike"
-                    value={profile.vehicle_type} onChange={(e) => setProfileField("vehicle_type", e.target.value)}
-                    required={false} touched={false}
-                  />
-                  <InputField
-                    icon={Clock} name="working_shift" label="Working Shift" placeholder="e.g. 9:00 AM - 7:00 PM"
-                    value={profile.working_shift} onChange={(e) => setProfileField("working_shift", e.target.value)}
-                    required={false} touched={false}
-                  />
-                  <InputField
-                    icon={Calendar} name="joining_date" label="Joining Date" type="date"
-                    value={profile.joining_date} onChange={(e) => setProfileField("joining_date", e.target.value)}
-                    required={false} touched={false}
-                  />
-                </div>
+                {showProfessionalDetails && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <InputField
+                      icon={Clock} name="experience_years" label="Experience (years)" placeholder="e.g. 3" type="number"
+                      value={profile.experience_years} onChange={(e) => setProfileField("experience_years", e.target.value)}
+                      required={false} touched={false}
+                    />
+                    <SelectField
+                      icon={Briefcase} name="bridge_type" label="Bridge Type" value={profile.bridge_type}
+                      onChange={(e) => setProfileField("bridge_type", e.target.value)}
+                      options={BRIDGE_TYPE_OPTIONS}
+                    />
+                    <InputField
+                      icon={MapPin} name="assigned_area" label="Assigned Area" placeholder="e.g. Noida Sector 62, Indirapuram"
+                      value={profile.assigned_area} onChange={(e) => setProfileField("assigned_area", e.target.value)}
+                      required={false} touched={false}
+                    />
+                    <InputField
+                      icon={Truck} name="vehicle_type" label="Vehicle Type" placeholder="e.g. Bike"
+                      value={profile.vehicle_type} onChange={(e) => setProfileField("vehicle_type", e.target.value)}
+                      required={false} touched={false}
+                    />
+                    <InputField
+                      icon={Clock} name="working_shift" label="Working Shift" placeholder="e.g. 9:00 AM - 7:00 PM"
+                      value={profile.working_shift} onChange={(e) => setProfileField("working_shift", e.target.value)}
+                      required={false} touched={false}
+                    />
+                    <InputField
+                      icon={Calendar} name="joining_date" label="Joining Date" type="date"
+                      value={profile.joining_date} onChange={(e) => setProfileField("joining_date", e.target.value)}
+                      required={false} touched={false}
+                    />
+                  </div>
+                )}
               </div>
 
               {/* ── KYC Section - identical KycCard/DocModal used on the

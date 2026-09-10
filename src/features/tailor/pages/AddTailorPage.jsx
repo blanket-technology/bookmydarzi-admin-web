@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User,
@@ -20,6 +21,7 @@ import {
   Briefcase,
   MapPin,
   Wand2,
+  ChevronDown,
 } from "lucide-react";
 import { InputField } from "../../../components/common/FormFields.jsx";
 import SectionHeader from "../../../components/common/SectionHeader.jsx";
@@ -29,6 +31,13 @@ import useAddTailor from "../hooks/useAddTailor.js";
 
 export default function AddTailorPage() {
   const navigate = useNavigate();
+  // Professional Details is genuinely optional (the section's own subtitle
+  // says so) but was rendered as 4 equally-prominent fields every time,
+  // making the "just create the login" path feel like a long form.
+  // Collapsed by default - the fast path (Account Details -> KYC -> Create)
+  // stays uncluttered, and anyone who wants to fill it in up front still can
+  // with one click, same fields, no functionality removed.
+  const [showProfessionalDetails, setShowProfessionalDetails] = useState(false);
   const {
     form,
     errors,
@@ -141,6 +150,16 @@ export default function AddTailorPage() {
                     error={errors.phone}
                     touched={showErrors}
                   />
+                  <InputField
+                    icon={Scissors}
+                    name="specialization"
+                    label="Specialization"
+                    placeholder="e.g. Bridal wear, Suits"
+                    value={form.specialization}
+                    onChange={onChange}
+                    error={errors.specialization}
+                    touched={showErrors}
+                  />
                   <div className="sm:col-span-2 lg:col-span-1">
                     <label className="text-xs font-semibold text-gray-600 flex items-center gap-1 mb-1.5">
                       Password
@@ -193,58 +212,70 @@ export default function AddTailorPage() {
                 </p>
               </div>
 
-              {/* Professional Details (optional) */}
+              {/* Additional Details - genuinely optional (experience,
+                  location, bio - Specialization moved into Account Details
+                  above since it's actually required by validate()).
+                  Collapsed by default so the fast "just create the login"
+                  path isn't cluttered by fields most admins skip anyway. */}
               <div className="space-y-5">
-                <SectionHeader
-                  icon={Briefcase}
-                  title="Professional Details"
-                  subtitle="Optional - can also be filled in later from the tailor's profile"
-                />
+                <button
+                  type="button"
+                  onClick={() => setShowProfessionalDetails((v) => !v)}
+                  className="w-full flex items-center justify-between pb-4 border-b-2 border-gray-100 text-left"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-teal-50 rounded-xl flex items-center justify-center shrink-0 border border-teal-100">
+                      <Briefcase size={20} className="text-teal-600" />
+                    </div>
+                    <div>
+                      <h3 className="font-bold text-gray-800 text-base leading-tight">Additional Details</h3>
+                      <p className="text-xs text-gray-400 mt-0.5">Optional - experience, location, bio. Can be filled in later.</p>
+                    </div>
+                  </div>
+                  <ChevronDown
+                    size={18}
+                    className={`text-gray-400 shrink-0 transition-transform ${showProfessionalDetails ? "rotate-180" : ""}`}
+                  />
+                </button>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  <InputField
-                    icon={Scissors}
-                    name="specialization"
-                    label="Specialization"
-                    placeholder="e.g. Bridal wear, Suits"
-                    value={form.specialization}
-                    onChange={onChange}
-                    error={errors.specialization}
-                    touched={showErrors}
-                  />
-                  <InputField
-                    icon={Briefcase}
-                    name="experience"
-                    label="Experience (years)"
-                    placeholder="e.g. 5"
-                    type="number"
-                    value={form.experience}
-                    onChange={onChange}
-                    required={false}
-                    touched={false}
-                  />
-                  <InputField
-                    icon={MapPin}
-                    name="location"
-                    label="Service Location"
-                    placeholder="e.g. Sector 63, Noida"
-                    value={form.location}
-                    onChange={onChange}
-                    required={false}
-                    touched={false}
-                  />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-gray-600">Bio</label>
-                  <textarea
-                    name="bio"
-                    rows={2}
-                    value={form.bio}
-                    onChange={onChange}
-                    placeholder="Short professional bio"
-                    className="w-full border-2 border-gray-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#006B6B] resize-none bg-gray-50 focus:bg-white transition-colors"
-                  />
-                </div>
+                {showProfessionalDetails && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                      <InputField
+                        icon={Briefcase}
+                        name="experience"
+                        label="Experience (years)"
+                        placeholder="e.g. 5"
+                        type="number"
+                        value={form.experience}
+                        onChange={onChange}
+                        required={false}
+                        touched={false}
+                      />
+                      <InputField
+                        icon={MapPin}
+                        name="location"
+                        label="Service Location"
+                        placeholder="e.g. Sector 63, Noida"
+                        value={form.location}
+                        onChange={onChange}
+                        required={false}
+                        touched={false}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-xs font-semibold text-gray-600">Bio</label>
+                      <textarea
+                        name="bio"
+                        rows={2}
+                        value={form.bio}
+                        onChange={onChange}
+                        placeholder="Short professional bio"
+                        className="w-full border-2 border-gray-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#006B6B] resize-none bg-gray-50 focus:bg-white transition-colors"
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               {/* KYC Section - identical KycCard/DocModal used on the tailor
