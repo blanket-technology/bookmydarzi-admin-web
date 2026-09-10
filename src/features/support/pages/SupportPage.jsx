@@ -143,8 +143,20 @@ export default function SupportPage() {
                         </span>
                       </td>
                       <td className="px-4 py-2.5 text-gray-800 max-w-xs truncate">{it.title}</td>
-                      <td className="px-4 py-2.5 text-gray-500 capitalize whitespace-nowrap">{it.subtitle || "-"}</td>
-                      <td className="px-4 py-2.5 text-gray-500 font-mono whitespace-nowrap">{it.order_code || (it.order_id ? `#${it.order_id}` : "-")}</td>
+                      <td className="px-4 py-2.5 capitalize whitespace-nowrap">
+                        {it.subtitle ? (
+                          <span className="text-gray-600">{it.subtitle.replace(/_/g, " ")}</span>
+                        ) : (
+                          <span className="text-gray-300 italic normal-case">No category</span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 font-mono whitespace-nowrap">
+                        {it.order_code || it.order_id ? (
+                          <span className="text-gray-600">{it.order_code || `#${it.order_id}`}</span>
+                        ) : (
+                          <span className="text-gray-300 italic font-sans">No order</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2.5 whitespace-nowrap">
                         <StatusBadge status={it.status} label={it.statusLabel} />
                       </td>
