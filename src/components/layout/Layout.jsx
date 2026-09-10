@@ -22,7 +22,6 @@ import {
   Calendar,
   Truck,
   PackageCheck,
-  Package,
 } from "lucide-react";
 import { LogoutPage } from "../../features/auth";
 import { adminWsService } from "../../services/adminWsService";
@@ -172,7 +171,6 @@ function Layout() {
     { name: "Order Management", path: "/ordersdetails", icon: ShoppingCart, module: MODULES.ORDERS },
     { name: "Deliveries", path: "/deliveries", icon: Truck, module: MODULES.FLEET_TRACKING },
     { name: "Pickups", path: "/pickups", icon: PackageCheck, module: MODULES.FLEET_TRACKING },
-    { name: "Inventory", path: "/inventory", icon: Package, module: MODULES.INVENTORY },
     { name: "Payments", path: "/payments", icon: CreditCard, module: MODULES.PAYMENTS },
     { name: "Catalog", path: "/catalog", icon: Grid, module: MODULES.CATALOG },
     { name: "Reporting", path: "/reporting", icon: BarChart2, module: MODULES.FINANCIAL_REPORTS },

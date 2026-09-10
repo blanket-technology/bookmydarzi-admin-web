@@ -89,11 +89,13 @@ export const useAddTailorStore = create((set, get) => ({
       const userCode = res?.user_code || "";
 
       const kycEntries = Object.entries(kyc).filter(([, file]) => !!file);
+      let uploadedCount = 0;
       if (tailorId && kycEntries.length > 0) {
         const failures = [];
         for (const [docKey, file] of kycEntries) {
           try {
             await uploadTailorKyc(tailorId, docKey, file);
+            uploadedCount += 1;
           } catch (kycErr) {
             failures.push(`${docKey}: ${extractErrorMessage(kycErr, "upload failed")}`);
           }
@@ -101,7 +103,7 @@ export const useAddTailorStore = create((set, get) => ({
         if (failures.length > 0) {
           set({
             status: "success",
-            msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} However, some KYC documents failed to upload (${failures.join("; ")}). Add them from the tailor's profile page.`,
+            msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} However, some KYC documents failed to upload (${failures.join("; ")}). This tailor is Pending Verification - add the missing documents from their profile page.`,
           });
           reset();
           set({ loading: false });
@@ -109,9 +111,19 @@ export const useAddTailorStore = create((set, get) => ({
         }
       }
 
+      // A new tailor is always created Pending Verification, regardless of
+      // how many KYC docs were attached here - verifying is a separate,
+      // deliberate admin action from the tailor's profile page, never
+      // automatic (matches the backend rule; see AddTailorPage.jsx's
+      // in-form hint for the same explanation shown before submit).
+      const verificationNote =
+        uploadedCount === 3
+          ? "All 3 KYC documents are attached - verify this tailor from their profile page when ready."
+          : `This tailor is Pending Verification (${uploadedCount}/3 KYC documents attached) - add the rest from their profile page before verifying.`;
+
       set({
         status: "success",
-        msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} They can log in with ${form.email} and the password you set (or ${DEFAULT_TAILOR_PASSWORD} if left blank).`,
+        msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} They can log in with ${form.email} and the password you set (or ${DEFAULT_TAILOR_PASSWORD} if left blank). ${verificationNote}`,
       });
       reset();
     } catch (error) {

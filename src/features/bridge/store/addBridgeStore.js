@@ -90,10 +90,12 @@ export const useAddBridgeStore = create((set, get) => ({
         }
       }
 
+      let uploadedCount = 0;
       if (newStaffId && kycEntries.length > 0) {
         for (const [docKey, file] of kycEntries) {
           try {
             await uploadStaffKyc(newStaffId, docKey, file);
+            uploadedCount += 1;
           } catch (kycErr) {
             failures.push(`${docKey}: ${extractErrorMessage(kycErr, "upload failed")}`);
           }
@@ -103,16 +105,24 @@ export const useAddBridgeStore = create((set, get) => ({
       if (failures.length > 0) {
         set({
           status: "success",
-          msg: `Employee account created!${bridgeId ? ` Bridge ID: ${bridgeId}.` : ""} However, some details failed to save (${failures.join("; ")}). You can add them from the employee's profile page.`,
+          msg: `Employee account created!${bridgeId ? ` Bridge ID: ${bridgeId}.` : ""} However, some details failed to save (${failures.join("; ")}). This employee is Pending Verification - add the missing documents from their profile page.`,
         });
         reset();
         set({ loading: false });
         return;
       }
 
+      // Mirrors addTailorStore.js's same note - a new Bridge employee is
+      // always created Pending Verification, never auto-approved, regardless
+      // of how many KYC docs were attached here.
+      const verificationNote =
+        uploadedCount === 3
+          ? "All 3 KYC documents are attached - verify this employee from their profile page when ready."
+          : `This employee is Pending Verification (${uploadedCount}/3 KYC documents attached) - add the rest from their profile page before verifying.`;
+
       set({
         status: "success",
-        msg: `Employee account created!${bridgeId ? ` Bridge ID: ${bridgeId}.` : ""} They can log in with ${form.email} and the password you set (or Bridge@123 if left blank).`,
+        msg: `Employee account created!${bridgeId ? ` Bridge ID: ${bridgeId}.` : ""} They can log in with ${form.email} and the password you set (or Bridge@123 if left blank). ${verificationNote}`,
       });
       reset();
     } catch (err) {

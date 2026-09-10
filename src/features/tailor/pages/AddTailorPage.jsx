@@ -304,6 +304,29 @@ export default function AddTailorPage() {
                     Accepted formats: JPG, PNG, PDF &nbsp;·&nbsp; Max 5 MB per file
                   </p>
                 </div>
+
+                {/* A tailor is never auto-verified on creation, even with
+                    all 3 documents attached here - verification is always a
+                    separate, deliberate admin action from the tailor's
+                    profile page (same rule the edit path enforces: is_approved
+                    can only flip false->true once all 3 KYC docs exist, and
+                    even then it's never automatic). Spelling that out here
+                    means the admin isn't surprised the new tailor shows
+                    "Pending Verification" immediately after creation. */}
+                <div
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2.5 border ${
+                    kycCount === 3
+                      ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                      : "bg-gray-50 border-gray-200 text-gray-600"
+                  }`}
+                >
+                  <ShieldCheck size={15} className={`shrink-0 ${kycCount === 3 ? "text-emerald-500" : "text-gray-400"}`} />
+                  <p className="text-xs font-medium">
+                    {kycCount === 3
+                      ? "All 3 documents attached - this tailor is ready to be verified from their profile page after creation."
+                      : `${kycCount}/3 documents attached - this tailor will be created as Pending Verification. Upload all 3 documents before they can be verified.`}
+                  </p>
+                </div>
               </div>
 
               <div className="flex gap-3 pt-2 border-t border-gray-100">
