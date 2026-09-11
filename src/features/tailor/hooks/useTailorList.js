@@ -9,6 +9,7 @@ export default function useTailorList() {
 
   const tailors = useTailorListStore((s) => s.tailors);
   const loading = useTailorListStore((s) => s.loading);
+  const fetchError = useTailorListStore((s) => s.fetchError);
   const workload = useTailorListStore((s) => s.workload);
   const workloadLoading = useTailorListStore((s) => s.workloadLoading);
   const workloadOpen = useTailorListStore((s) => s.workloadOpen);
@@ -57,6 +58,7 @@ export default function useTailorList() {
     navigate,
     tailors,
     loading,
+    fetchError,
     workload,
     workloadLoading,
     workloadOpen,

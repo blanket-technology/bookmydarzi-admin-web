@@ -3,7 +3,7 @@ import PageHeader from "../../../components/common/PageHeader";
 import Pagination from "../../../components/common/Pagination";
 import StatusBadge from "../../../components/common/StatusBadge";
 import { formatDate } from "../../../utils/formatters";
-import { STATUS_LABELS } from "../../../utils/orderActions";
+import { STATUS_LABELS, TERMINAL_STATUSES } from "../../../utils/orderActions";
 import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js";
 import { PAYMENT_STATUS_OPTIONS } from "../constants/orderConstants.js";
 import { getStatusFilterOptions } from "../utils/orderUtils.js";
@@ -17,6 +17,7 @@ export default function OrderDetailsPage() {
     token,
     navigate,
     isTailor,
+    isEmployee,
     orders,
     total,
     fetching,
@@ -283,7 +284,7 @@ export default function OrderDetailsPage() {
                         >
                           <Edit2 size={13} />
                         </button>
-                        {!isTailor && (
+                        {!isTailor && !isEmployee && !TERMINAL_STATUSES.has((order.Status || "").toLowerCase()) && (
                           <button
                             onClick={() => setCancelTarget(order)}
                             className="p-1.5 text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100"

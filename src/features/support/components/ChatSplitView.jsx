@@ -77,7 +77,11 @@ export default function ChatSplitView({ chats, activeSession, onSelect, onClose,
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <StatusBadge status={c.status} label={c.statusLabel} />
-                      {c.order_id && <span className="text-[10px] text-slate-400">#{c.order_id}</span>}
+                      {(c.order_code || c.order_id) && (
+                        <span className="text-[10px] text-slate-400">
+                          {c.order_code || `#${c.order_id}`}
+                        </span>
+                      )}
                     </div>
                   </button>
                 );

@@ -141,8 +141,40 @@ function StatusStepper({ status }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5 overflow-x-auto">
-      <div className="flex items-center min-w-[560px] sm:min-w-0">
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-5">
+      {/* Vertical layout below sm - 6 non-wrapping horizontal steps genuinely
+          didn't fit narrow viewports (previously forced a 560px min-width
+          and horizontal-scrolled, which is not the same as being readable
+          without scrolling). Horizontal layout unchanged at sm+ where it
+          does fit. */}
+      <div className="flex flex-col gap-3 sm:hidden">
+        {JOURNEY.map((step, i) => {
+          const done = current > i;
+          const active = current === i;
+          const state = done ? "done" : active ? "active" : "todo";
+          const dot = {
+            done: "bg-teal-600 text-white",
+            active: "bg-teal-600 text-white ring-4 ring-teal-100",
+            todo: "bg-gray-100 text-gray-400",
+          }[state];
+          const line = current > i ? "bg-teal-500" : "bg-gray-200";
+          return (
+            <div key={step.key} className="flex items-start gap-3">
+              <div className="flex flex-col items-center shrink-0">
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${dot}`}>
+                  {done ? "✓" : i + 1}
+                </div>
+                {i < JOURNEY.length - 1 && <div className={`w-0.5 flex-1 min-h-[18px] rounded-full mt-1 ${line}`} />}
+              </div>
+              <span className={`text-xs font-semibold pt-1 ${active ? "text-teal-700" : done ? "text-gray-600" : "text-gray-400"}`}>
+                {step.label}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="hidden sm:flex items-center">
         {JOURNEY.map((step, i) => {
           const done = current > i;
           const active = current === i;
@@ -164,7 +196,7 @@ function StatusStepper({ status }) {
                 </span>
               </div>
               {i < JOURNEY.length - 1 && (
-                <div className="flex-1 h-0.5 mx-1 sm:mx-2 rounded-full -mt-4">
+                <div className="flex-1 h-0.5 mx-2 rounded-full -mt-4">
                   <div className={`h-full rounded-full ${line}`} />
                 </div>
               )}

@@ -80,6 +80,14 @@ export function isTailorRole() {
   return (getStoredUser()?.Role || "").toLowerCase() === ROLES.TAILOR;
 }
 
+// Bridge/delivery staff - full order-management capability except
+// cancellation, which is Admin/Superadmin only (see orderActions.js's
+// cancel_order action and the backend's dedicated
+// _require_admin_cancel_order dependency).
+export function isEmployeeRole() {
+  return (getStoredUser()?.Role || "").toLowerCase() === ROLES.EMPLOYEE;
+}
+
 export function cacheOrders(data) {
   try {
     sessionStorage.setItem(ORDERS_CACHE_KEY, JSON.stringify(data));

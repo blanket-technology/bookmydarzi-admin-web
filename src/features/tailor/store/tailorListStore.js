@@ -19,6 +19,7 @@ export const useTailorListStore = create((set, get) => ({
   tailors: [],
   workload: [],
   loading: true,
+  fetchError: null,
   workloadLoading: false,
   search: "",
   filters: { ...INIT_FILTERS },
@@ -30,7 +31,7 @@ export const useTailorListStore = create((set, get) => ({
   workloadOpen: false,
 
   setSearch: (search) => set({ search, page: DEFAULT_PAGE }),
-  setFilters: (filters) => set({ filters }),
+  setFilters: (filters) => set({ filters, page: DEFAULT_PAGE }),
   setPage: (page) => set({ page }),
   setLimit: (limit) => set({ limit, page: DEFAULT_PAGE }),
   setShowForm: (showForm) => set({ showForm }),
@@ -39,12 +40,18 @@ export const useTailorListStore = create((set, get) => ({
   setWorkloadOpen: (workloadOpen) => set({ workloadOpen }),
 
   fetchTailors: async () => {
-    set({ loading: true });
+    set({ loading: true, fetchError: null });
     try {
       const tailors = await getTailors();
       set({ tailors, loading: false });
-    } catch {
-      set({ tailors: [], loading: false });
+    } catch (err) {
+      // Previously cleared the list to [] on any failure, which rendered
+      // the same "No Tailors Found" empty-state used for a genuinely empty
+      // dataset - an admin had no way to tell "no tailors exist" from "the
+      // API just failed." Keep the existing tailors in place (stale-but-
+      // visible beats silently-emptied) and surface a distinct error the
+      // page can show with a retry action instead.
+      set({ fetchError: extractErrorMessage(err, "Failed to load tailors."), loading: false });
     }
   },
 

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useDebouncedValue } from "../../../hooks/useDebouncedValue.js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { countActiveFilters } from "../utils/orderUtils.js";
-import { isTailorRole, getOrdersList, resolveOrdersEndpoint } from "../services/orderService.js";
+import { isTailorRole, isEmployeeRole, getOrdersList, resolveOrdersEndpoint } from "../services/orderService.js";
 import { useOrderListStore } from "../store/orderListStore.js";
 import { orderListQueryKey } from "../../../services/queryKeys.js";
 import { buildOrdersListParams } from "../utils/orderUtils.js";
@@ -54,6 +54,7 @@ export default function useOrderList() {
 
   const debouncedSearch = useDebouncedValue(search, 400);
   const isTailor = isTailorRole();
+  const isEmployee = isEmployeeRole();
   const activeFilterCount = countActiveFilters({
     filterPayment,
     filterTailor,
@@ -150,6 +151,7 @@ export default function useOrderList() {
     token,
     navigate,
     isTailor,
+    isEmployee,
     orders,
     total,
     fetching,

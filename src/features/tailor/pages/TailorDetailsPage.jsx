@@ -1,5 +1,6 @@
 import AddTailorPage from "./AddTailorPage.jsx";
 import {
+  AlertCircle,
   Filter,
   ChevronDown,
   ChevronUp,
@@ -53,6 +54,7 @@ export default function TailorDetailsPage() {
     token,
     navigate,
     loading,
+    fetchError,
     workload,
     workloadLoading,
     workloadOpen,
@@ -277,6 +279,14 @@ export default function TailorDetailsPage() {
             </div>
           )}
         </div>
+
+        {fetchError && (
+          <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-4 py-2.5 rounded-xl mb-3 text-xs font-semibold">
+            <AlertCircle size={14} className="text-amber-500 shrink-0" />
+            <span className="flex-1">{fetchError}</span>
+            <button onClick={fetchTailors} className="underline font-bold">Retry</button>
+          </div>
+        )}
 
         <DataTable
           columns={TAILOR_TABLE_COLUMNS}

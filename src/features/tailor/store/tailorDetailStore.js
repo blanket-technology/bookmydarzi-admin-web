@@ -93,8 +93,12 @@ export const useTailorDetailStore = create((set, get) => ({
   saveProfile: async ({ tailorId, form, kycFiles, photo, liveData }) => {
     set({ saving: true });
     try {
-      const payload = buildTailorSavePayload(form);
-      await updateTailor(tailorId, payload);
+      // Uploads run BEFORE the profile PATCH, not after - previously the
+      // PATCH committed first, so a failed KYC/photo upload afterward left
+      // the profile fields saved on the backend while the UI reported the
+      // whole save as failed, with no rollback. Running uploads first means
+      // an upload failure aborts here with nothing yet written to the
+      // profile, instead of leaving a partial, inconsistent save.
       await get().uploadPendingKyc(tailorId, kycFiles);
       if (photo) {
         const res = await uploadUserPhoto(liveData.user_id, photo);
@@ -105,6 +109,8 @@ export const useTailorDetailStore = create((set, get) => ({
           },
         }));
       }
+      const payload = buildTailorSavePayload(form);
+      await updateTailor(tailorId, payload);
       set((s) => ({
         liveData: {
           ...s.liveData,

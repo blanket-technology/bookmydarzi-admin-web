@@ -951,7 +951,12 @@ export default function TailorFullDetailsPage() {
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <SelectField icon={User} name="role" label="Role" value={form.role} onChange={onChange} disabled={!editMode}
+                {/* Read-only, not editable - the backend's tailor-update
+                    endpoint (AdminTailorUpdateRequest) has no role field at
+                    all, so a selected change here was always silently
+                    discarded on save. Account role/type isn't something
+                    this edit form can actually change. */}
+                <SelectField icon={User} name="role" label="Role" value={form.role} onChange={onChange} disabled
                   options={[
                     { value: "", label: "Select Role" },
                     { value: "Tailor", label: "Tailor" },

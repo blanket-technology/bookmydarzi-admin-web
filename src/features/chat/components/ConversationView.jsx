@@ -349,14 +349,10 @@ export default function ConversationView({ session, onRefresh, onResolve, onBack
         </div>
       </div>
 
+      {/* No "Customer:" row here - it duplicated the exact same
+          customer_name/User #N string already shown as the primary heading
+          above, just in smaller secondary text. */}
       <div className="flex flex-wrap items-center gap-x-5 gap-y-1.5 px-4 py-2.5 bg-slate-50 border-b border-slate-100 flex-shrink-0 text-xs">
-        <div className="flex items-center gap-1.5">
-          <User size={12} className="text-slate-400" />
-          <span className="text-slate-400">Customer:</span>
-          <span className="font-semibold text-slate-700">
-            {session.customer_name || `User #${session.user_id}`}
-          </span>
-        </div>
         {(session.order_code || session.order_id) && (
           <div className="flex items-center gap-1.5">
             <Package size={12} className="text-slate-400" />
