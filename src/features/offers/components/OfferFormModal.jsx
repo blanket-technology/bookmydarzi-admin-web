@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { Percent, IndianRupee, Calendar } from "lucide-react";
 import FormModal, { Field, FORM_INPUT_CLASS as inp } from "../../../components/common/FormModal.jsx";
 import ImageUploadField from "../../../components/common/ImageUploadField.jsx";
@@ -12,6 +13,9 @@ export default function OfferFormModal({
   onSubmit,
   onFormChange,
 }) {
+  const validFromRef = useRef(null);
+  const validUntilRef = useRef(null);
+
   return (
     <FormModal
       title={editingId ? "Edit Offer" : "New Offer"}
@@ -123,29 +127,47 @@ export default function OfferFormModal({
         <Field label="Valid From" hint="Leave blank to start immediately">
           <div className="relative">
             <input
+              ref={validFromRef}
               type="date"
               value={form.valid_from}
               onChange={(e) => onFormChange({ valid_from: e.target.value })}
               className={inp + " pr-9 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0"}
             />
-            <Calendar
-              size={15}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
+            {/* Native picker indicator is hidden (opacity-0 above) and this
+                icon drawn in its place instead - clicking it previously did
+                nothing since pointer-events-none passed the click straight
+                to the input's text area, not the (invisible) native button
+                underneath. showPicker() opens the picker directly instead
+                of relying on hitting that exact pixel. */}
+            <button
+              type="button"
+              onClick={() => validFromRef.current?.showPicker?.()}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              tabIndex={-1}
+              aria-label="Open date picker"
+            >
+              <Calendar size={15} />
+            </button>
           </div>
         </Field>
         <Field label="Valid Until">
           <div className="relative">
             <input
+              ref={validUntilRef}
               type="date"
               value={form.valid_until}
               onChange={(e) => onFormChange({ valid_until: e.target.value })}
               className={inp + " pr-9 [color-scheme:light] [&::-webkit-calendar-picker-indicator]:opacity-0"}
             />
-            <Calendar
-              size={15}
-              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-gray-400"
-            />
+            <button
+              type="button"
+              onClick={() => validUntilRef.current?.showPicker?.()}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              tabIndex={-1}
+              aria-label="Open date picker"
+            >
+              <Calendar size={15} />
+            </button>
           </div>
         </Field>
       </div>
