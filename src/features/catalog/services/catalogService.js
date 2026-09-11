@@ -52,3 +52,25 @@ export async function updateService(id, payload) {
 export async function deleteService(id) {
   await api.delete(`/catalog/services/${id}`);
 }
+
+// ── Service add-ons (optional, per-service extras a customer can add at
+// booking time, e.g. Button Replacement for Shirt Repair) ─────────────────
+
+export async function getServiceAddons(serviceId) {
+  const response = await api.get(`/catalog/admin/services/${serviceId}/addons`);
+  return response.data;
+}
+
+export async function createServiceAddon(serviceId, payload) {
+  const response = await api.post(`/catalog/admin/services/${serviceId}/addons`, payload);
+  return response.data;
+}
+
+export async function updateServiceAddon(serviceId, addonId, payload) {
+  const response = await api.patch(`/catalog/admin/services/${serviceId}/addons/${addonId}`, payload);
+  return response.data;
+}
+
+export async function deleteServiceAddon(serviceId, addonId) {
+  await api.delete(`/catalog/admin/services/${serviceId}/addons/${addonId}`);
+}

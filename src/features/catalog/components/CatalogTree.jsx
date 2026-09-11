@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   ChevronDown, ChevronRight, Pencil, Trash2, Plus, RefreshCw,
-  FolderOpen, Layers, Scissors, GripVertical, IndianRupee, Sparkles, EyeOff, Truck,
+  FolderOpen, Layers, Scissors, GripVertical, IndianRupee, Sparkles, EyeOff, Truck, ListPlus,
 } from "lucide-react";
 import { resolveMediaUrl } from "../../../services/api.js";
 import { REORDER_PATHS } from "../constants/catalogConstants.js";
@@ -35,6 +35,7 @@ export default function CatalogTree({
   onEditService,
   onDeleteService,
   onRestoreService,
+  onManageAddons,
   restoringId,
   showInactive,
   onToggleShowInactive,
@@ -197,6 +198,7 @@ export default function CatalogTree({
                     onEditService={onEditService}
                     onDeleteService={onDeleteService}
                     onRestoreService={onRestoreService}
+                    onManageAddons={onManageAddons}
                     restoringId={restoringId}
                     showInactive={showInactive}
                     onReordered={onReordered}
@@ -213,6 +215,7 @@ export default function CatalogTree({
                         onEditService={onEditService}
                         onDeleteService={onDeleteService}
                         onRestoreService={onRestoreService}
+                        onManageAddons={onManageAddons}
                         restoringId={restoringId}
                         onReordered={onReordered}
                       />
@@ -266,7 +269,7 @@ function IconButton({ onClick, title, tone, children }) {
 function ServiceLineList({
   category, lines, openLines, toggleLine,
   onEditLine, onDeleteLine, onRestoreLine,
-  onAddService, onEditService, onDeleteService, onRestoreService,
+  onAddService, onEditService, onDeleteService, onRestoreService, onManageAddons,
   restoringId, showInactive, onReordered,
 }) {
   const { order, cardProps, handleProps } = useDragReorder(
@@ -324,6 +327,7 @@ function ServiceLineList({
                   onEditService={onEditService}
                   onDeleteService={onDeleteService}
                   onRestoreService={onRestoreService}
+                  onManageAddons={onManageAddons}
                   restoringId={restoringId}
                   onReordered={onReordered}
                 />
@@ -339,7 +343,7 @@ function ServiceLineList({
   );
 }
 
-function ServiceList({ services, parent, onEditService, onDeleteService, onRestoreService, restoringId, onReordered }) {
+function ServiceList({ services, parent, onEditService, onDeleteService, onRestoreService, onManageAddons, restoringId, onReordered }) {
   const { order, cardProps, handleProps } = useDragReorder(
     services, (s) => s.service_id ?? s.id, REORDER_PATHS.services, onReordered,
   );
@@ -387,6 +391,7 @@ function ServiceList({ services, parent, onEditService, onDeleteService, onResto
                 </button>
               ) : (
                 <>
+                  <IconButton onClick={() => onManageAddons(svc)} title="Manage add-ons" tone="teal"><ListPlus size={12} /></IconButton>
                   <IconButton onClick={() => onEditService(svc, parent)} title="Edit" tone="blue"><Pencil size={11} /></IconButton>
                   <IconButton onClick={() => onDeleteService(svc)} title="Delete" tone="rose"><Trash2 size={11} /></IconButton>
                 </>

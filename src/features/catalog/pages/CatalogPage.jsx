@@ -82,6 +82,7 @@ export default function CatalogPage() {
             onEditService={(svc, parent) => setModal({ type: "edit-service", data: svc, lineName: parent.lineName })}
             onDeleteService={(svc) => setModal({ type: "delete-service", data: svc })}
             onRestoreService={handleRestoreService}
+            onManageAddons={(svc) => setModal({ type: "service-addons", data: svc })}
             restoringId={restoringId}
             showInactive={showInactive}
             onToggleShowInactive={setShowInactive}

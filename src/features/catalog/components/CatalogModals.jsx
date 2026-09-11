@@ -1,5 +1,6 @@
 import ConfirmDelete from "./ConfirmDelete.jsx";
 import CatalogItemModal from "./CatalogItemModal.jsx";
+import ServiceAddonsModal from "./ServiceAddonsModal.jsx";
 
 export default function CatalogModals({
   modal,
@@ -65,6 +66,10 @@ export default function CatalogModals({
       )}
       {modal.type === "delete-service" && (
         <ConfirmDelete message={`Delete item "${modal.data.name}"?`} onConfirm={handleDeleteService} onClose={closeModal} loading={deleting} />
+      )}
+
+      {modal.type === "service-addons" && (
+        <ServiceAddonsModal service={modal.data} onClose={closeModal} />
       )}
     </>
   );
