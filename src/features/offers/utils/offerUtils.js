@@ -5,6 +5,7 @@ export function offerToForm(offer) {
     discount_type: offer.DiscountType === "flat" ? "flat" : "percentage",
     discount_percent: offer.DiscountPercent ?? "",
     discount_amount: offer.DiscountAmount ?? "",
+    min_order_value: offer.MinOrderValue || "",
     coupon_code: offer.CouponCode || "",
     image_url: offer.ImageUrl || "",
     valid_from: offer.ValidFrom ? offer.ValidFrom.slice(0, 10) : "",
@@ -25,6 +26,7 @@ export function buildOfferPayload(form) {
       form.discount_type === "flat" && form.discount_amount !== ""
         ? Number(form.discount_amount)
         : null,
+    min_order_value: form.min_order_value !== "" ? Number(form.min_order_value) : 0,
     coupon_code: form.coupon_code.trim().toUpperCase() || null,
     image_url: form.image_url || null,
     valid_from: form.valid_from || null,

@@ -58,12 +58,21 @@ export default function OfferCard({ offer, onEdit, onDelete, onToggle }) {
         {offer.Description && (
           <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{offer.Description}</p>
         )}
-        {offer.CouponCode && (
-          <div className="flex items-center gap-1.5 pt-1">
-            <Ticket size={11} className="text-teal-500 shrink-0" />
-            <span className="text-[11px] font-mono font-bold text-teal-700 tracking-wider bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-md">
-              {offer.CouponCode}
-            </span>
+        {(offer.CouponCode || offer.MinOrderValue > 0) && (
+          <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+            {offer.CouponCode && (
+              <>
+                <Ticket size={11} className="text-teal-500 shrink-0" />
+                <span className="text-[11px] font-mono font-bold text-teal-700 tracking-wider bg-teal-50 border border-teal-100 px-2 py-0.5 rounded-md">
+                  {offer.CouponCode}
+                </span>
+              </>
+            )}
+            {offer.MinOrderValue > 0 && (
+              <span className="text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">
+                Min ₹{offer.MinOrderValue.toLocaleString("en-IN")}
+              </span>
+            )}
           </div>
         )}
         <div className="flex items-center gap-1.5 mt-auto pt-1">

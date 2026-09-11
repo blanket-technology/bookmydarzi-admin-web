@@ -107,6 +107,18 @@ export default function OfferFormModal({
         )}
       </div>
 
+      <Field label="Minimum Order Value (₹)" hint="Order subtotal must reach this amount for the offer to be applicable. Leave 0 for no minimum.">
+        <input
+          type="number"
+          min="0"
+          step="1"
+          value={form.min_order_value}
+          onChange={(e) => onFormChange({ min_order_value: e.target.value })}
+          className={inp}
+          placeholder="0"
+        />
+      </Field>
+
       <div className="grid grid-cols-2 gap-3">
         <Field label="Valid From" hint="Leave blank to start immediately">
           <div className="relative">
