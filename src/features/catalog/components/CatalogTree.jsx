@@ -2,6 +2,7 @@ import { useState } from "react";
 import {
   ChevronDown, ChevronRight, Pencil, Trash2, Plus, RefreshCw,
   FolderOpen, Layers, Scissors, GripVertical, IndianRupee, Sparkles, EyeOff, Truck, ListPlus,
+  Image as ImageIcon,
 } from "lucide-react";
 import { resolveMediaUrl } from "../../../services/api.js";
 import { REORDER_PATHS } from "../constants/catalogConstants.js";
@@ -293,8 +294,17 @@ function ServiceLineList({
                 <span className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center transition-colors ${isOpen ? "bg-teal-100 text-teal-700" : "text-gray-400"}`}>
                   {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
                 </span>
-                <div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${inactive ? "bg-gray-100" : "bg-teal-50"}`}>
-                  <Layers size={13} className={inactive ? "text-gray-400" : "text-teal-600"} />
+                <div
+                  title={line.image_url ? undefined : "No image set"}
+                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 overflow-hidden ${
+                    line.image_url
+                      ? `ring-1 ${inactive ? "bg-gray-100 ring-gray-200" : "bg-teal-50 ring-teal-100"}`
+                      : `border border-dashed ${inactive ? "border-gray-200 bg-gray-100" : "border-gray-300 bg-gray-50"}`
+                  }`}
+                >
+                  {line.image_url
+                    ? <img src={resolveMediaUrl(line.image_url)} alt="" className="w-8 h-8 object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                    : <Layers size={13} className={inactive ? "text-gray-400" : "text-gray-300"} />}
                 </div>
                 <span className={`font-semibold text-sm truncate ${inactive ? "text-gray-400 line-through decoration-1" : "text-gray-700"}`}>{line.name}</span>
                 <span className="text-[11px] text-gray-400 shrink-0">{services.length} item{services.length !== 1 ? "s" : ""}</span>
@@ -366,9 +376,20 @@ function ServiceList({ services, parent, onEditService, onDeleteService, onResto
             }`}
           >
             {!inactive && <span {...handleProps(svc)}><GripVertical size={12} /></span>}
-            <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${svc.is_premium ? "bg-amber-50" : "bg-gray-100"}`}>
-              {svc.is_premium ? <Sparkles size={11} className="text-amber-500" /> : <Scissors size={11} className="text-gray-400" />}
-            </div>
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); onEditService(svc, parent); }}
+              title={svc.image_url ? "Change image" : "No image yet — click to add one"}
+              className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 overflow-hidden transition-colors ${
+                svc.image_url
+                  ? `ring-1 ${svc.is_premium ? "bg-amber-50 ring-amber-100" : "bg-gray-50 ring-gray-100"}`
+                  : "border border-dashed border-gray-300 hover:border-teal-400 hover:bg-teal-50/40"
+              }`}
+            >
+              {svc.image_url
+                ? <img src={resolveMediaUrl(svc.image_url)} alt="" className="w-9 h-9 object-cover" onError={(e) => { e.target.style.display = "none"; }} />
+                : svc.is_premium ? <Sparkles size={13} className="text-amber-400" /> : <ImageIcon size={13} className="text-gray-300" />}
+            </button>
             <span className={`text-sm font-medium flex-1 min-w-0 truncate ${inactive ? "text-gray-400 line-through decoration-1" : "text-gray-700"}`}>{svc.name}</span>
             {svc.is_premium && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 shrink-0">Premium</span>}
             {svc.estimated_delivery_days != null && (
