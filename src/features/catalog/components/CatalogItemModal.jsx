@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { X } from "lucide-react";
 import FormModal, { Field } from "../../../components/common/FormModal.jsx";
 import ImageUploadField from "../../../components/common/ImageUploadField.jsx";
+import AddonsManagerPanel from "./AddonsManagerPanel.jsx";
 import { extractErrorMessage } from "../../../utils/formatters.js";
 import { INPUT_CLASS as inp, TEXTAREA_CLASS as tinp, CATALOG_IMAGE_UPLOAD_PATH } from "../constants/catalogConstants.js";
 import * as catalogService from "../services/catalogService.js";
@@ -18,10 +20,35 @@ import * as catalogService from "../services/catalogService.js";
  *         { categoryId, lineId, lineName } for a service. Unused for a
  *         category (top level, no parent).
  */
+function ModalTabs({ tab, setTab }) {
+  return (
+    <div className="flex gap-1 p-1 rounded-xl bg-gray-100 mb-4">
+      {[
+        { id: "details", label: "Details" },
+        { id: "addons", label: "Add-ons" },
+      ].map((t) => (
+        <button
+          key={t.id}
+          type="button"
+          onClick={() => setTab(t.id)}
+          className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+            tab === t.id ? "bg-white text-teal-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+          }`}
+        >
+          {t.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function CatalogItemModal({ level, initial, parent, onClose, onSaved }) {
   const isEdit = !!initial;
   const isService = level === "service";
-  const isLine = level === "line";
+  // Add-ons only make sense for an existing, already-saved service - a
+  // brand-new unsaved item has no service_id yet to attach add-ons to.
+  const showAddonsTab = isService && isEdit;
+  const [tab, setTab] = useState("details");
 
   const [form, setForm] = useState({
     name: initial?.name ?? "",
@@ -106,6 +133,26 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
     }
   };
 
+  if (showAddonsTab && tab === "addons") {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6 max-h-[90vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-sm font-bold text-gray-800">{titleByLevel[level]}</h2>
+              {subtitleByLevel[level] && <p className="text-xs text-gray-400 mt-0.5">{subtitleByLevel[level]}</p>}
+            </div>
+            <button onClick={onClose} className="p-1 rounded-lg hover:bg-gray-100 shrink-0">
+              <X size={16} className="text-gray-400" />
+            </button>
+          </div>
+          <ModalTabs tab={tab} setTab={setTab} />
+          <AddonsManagerPanel serviceId={initial.service_id} />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <FormModal
       title={titleByLevel[level]}
@@ -116,6 +163,8 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
       submitting={saving}
       message={error ? { type: "error", text: error } : null}
     >
+      {showAddonsTab && <ModalTabs tab={tab} setTab={setTab} />}
+
       <Field label="Name" required>
         <input
           required
