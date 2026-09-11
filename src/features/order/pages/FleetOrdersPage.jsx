@@ -22,11 +22,17 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
+  const [unassignedCount, setUnassignedCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
+
+  // employeeField is the frontend order object's own field name
+  // ("AssignedEmployeeId" for Pickups, "DeliveryEmployeeId" for Deliveries)
+  // - maps to the matching backend unassigned_field query param value.
+  const unassignedField = employeeField === "DeliveryEmployeeId" ? "delivery_employee" : "employee";
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -49,12 +55,27 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
     }
   }, [statuses, page, limit, search]);
 
+  // A fleet-wide count, not "how many on THIS page have no employee" - the
+  // previous version derived this from the paginated `orders` array, so a
+  // page with zero unassigned orders showed "Unassigned: 0" even with
+  // several sitting on other pages. limit=1 since only `total` is needed.
+  const fetchUnassignedCount = useCallback(async () => {
+    try {
+      const res = await api.get("/admin/orders", {
+        params: { status: statuses.join(","), page: 1, limit: 1, unassigned_field: unassignedField },
+      });
+      setUnassignedCount(res.data.total || 0);
+    } catch {
+      // Non-fatal - the fleet-wide "In Progress" total/table still loads fine.
+    }
+  }, [statuses, unassignedField]);
+
   // Fetch-on-dep-change; setState happens inside fetchOrders' async
   // handlers, not synchronously in the effect body.
   // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { fetchOrders(); }, [fetchOrders]);
-
-  const unassignedCount = orders.filter((o) => !o[employeeField]).length;
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => { fetchUnassignedCount(); }, [fetchUnassignedCount]);
 
   return (
     <div className="p-3 sm:p-5 w-full min-h-screen bg-gray-100">
@@ -73,7 +94,7 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
                 className="pl-8 pr-4 py-1.5 rounded-full text-gray-800 text-xs outline-none w-60 bg-white"
               />
             </div>
-            <button onClick={fetchOrders} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
+            <button onClick={() => { fetchOrders(); fetchUnassignedCount(); }} className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold">
               <RefreshCw size={13} /> Refresh
             </button>
           </>

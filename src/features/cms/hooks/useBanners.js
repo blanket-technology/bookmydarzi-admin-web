@@ -18,6 +18,7 @@ export default function useBanners() {
   const [form, setForm] = useState(BANNER_INIT);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => {
     fetchBanners();
@@ -62,10 +63,13 @@ export default function useBanners() {
       confirmLabel: "Yes, Delete",
       tone: "danger",
     }))) return;
+    setDeletingId(id);
     try {
       await deleteBanner(id);
     } catch (err) {
       notifyError(extractErrorMessage(err, "Delete failed."));
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -78,6 +82,7 @@ export default function useBanners() {
     form,
     saving,
     saveMsg,
+    deletingId,
     setShowModal,
     updateForm,
     openCreate,

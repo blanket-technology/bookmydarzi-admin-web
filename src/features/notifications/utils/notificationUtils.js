@@ -35,19 +35,12 @@ export function getDistinctTypes() {
   });
 }
 
-export function filterNotifications(notifications, search) {
-  const q = search.trim().toLowerCase();
-  if (!q) return notifications;
-  return notifications.filter(
-    (n) => n.title?.toLowerCase().includes(q) || n.body?.toLowerCase().includes(q)
-  );
-}
-
-export function buildNotificationParams({ page, limit, unreadOnly, typeFilter }) {
+export function buildNotificationParams({ page, limit, unreadOnly, typeFilter, debouncedSearch }) {
   return {
     page,
     limit,
     unread_only: unreadOnly,
     type: typeFilter || undefined,
+    search: debouncedSearch || undefined,
   };
 }

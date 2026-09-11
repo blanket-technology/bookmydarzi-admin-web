@@ -19,17 +19,19 @@ export const useNotificationStore = create((set, get) => ({
   limit: DEFAULT_LIMIT,
   unreadOnly: false,
   typeFilter: "",
+  debouncedSearch: "",
 
   setPage: (page) => set({ page }),
   setLimit: (limit) => set({ limit, page: DEFAULT_PAGE }),
   setUnreadOnly: (unreadOnly) => set({ unreadOnly, page: DEFAULT_PAGE }),
   setTypeFilter: (typeFilter) => set({ typeFilter, page: DEFAULT_PAGE }),
+  setDebouncedSearch: (debouncedSearch) => set({ debouncedSearch, page: DEFAULT_PAGE }),
 
   fetchNotifications: async () => {
-    const { page, limit, unreadOnly, typeFilter } = get();
+    const { page, limit, unreadOnly, typeFilter, debouncedSearch } = get();
     set({ loading: true, error: "" });
     try {
-      const params = buildNotificationParams({ page, limit, unreadOnly, typeFilter });
+      const params = buildNotificationParams({ page, limit, unreadOnly, typeFilter, debouncedSearch });
       const data = await getNotifications(params);
       set({
         notifications: data.notifications || [],

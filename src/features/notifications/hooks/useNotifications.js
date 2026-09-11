@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { extractErrorMessage } from "../../../utils/formatters.js";
 import { notifyError } from "../../../services/dialogService.js";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue.js";
 import { LIVE_WS_EVENTS } from "../constants/notificationConstants.js";
-import { filterNotifications, getDistinctTypes } from "../utils/notificationUtils.js";
+import { getDistinctTypes } from "../utils/notificationUtils.js";
 import { useNotificationStore } from "../store/notificationStore.js";
 
 export default function useNotifications() {
@@ -19,6 +20,8 @@ export default function useNotifications() {
   const setLimit = useNotificationStore((s) => s.setLimit);
   const setUnreadOnly = useNotificationStore((s) => s.setUnreadOnly);
   const setTypeFilter = useNotificationStore((s) => s.setTypeFilter);
+  const setDebouncedSearch = useNotificationStore((s) => s.setDebouncedSearch);
+  const storeDebouncedSearch = useNotificationStore((s) => s.debouncedSearch);
   const fetchNotifications = useNotificationStore((s) => s.fetchNotifications);
   const refreshUnreadCount = useNotificationStore((s) => s.refreshUnreadCount);
   const markRead = useNotificationStore((s) => s.markRead);
@@ -29,9 +32,22 @@ export default function useNotifications() {
   const [showBroadcast, setShowBroadcast] = useState(false);
   const [sentBanner, setSentBanner] = useState("");
 
+  const debouncedSearch = useDebouncedValue(search);
+
+  // Search used to filter only the currently-loaded page of notifications
+  // client-side while Pagination still showed the unfiltered server-side
+  // total - a match on any other page was invisible and the "N total" count
+  // was a lie. Now a real, debounced server-side query, same pattern as
+  // Users/Payments.
+  useEffect(() => {
+    if (debouncedSearch !== storeDebouncedSearch) {
+      setDebouncedSearch(debouncedSearch);
+    }
+  }, [debouncedSearch, storeDebouncedSearch, setDebouncedSearch]);
+
   useEffect(() => {
     fetchNotifications();
-  }, [page, limit, unreadOnly, typeFilter, fetchNotifications]);
+  }, [page, limit, unreadOnly, typeFilter, storeDebouncedSearch, fetchNotifications]);
 
   useEffect(() => {
     const onLiveEvent = () => {
@@ -42,7 +58,6 @@ export default function useNotifications() {
     return () => LIVE_WS_EVENTS.forEach((e) => window.removeEventListener(e, onLiveEvent));
   }, [page, fetchNotifications, refreshUnreadCount]);
 
-  const visible = filterNotifications(notifications, search);
   const distinctTypes = getDistinctTypes();
 
   const handleMarkRead = async (id) => {
@@ -75,7 +90,7 @@ export default function useNotifications() {
   };
 
   return {
-    visible,
+    visible: notifications,
     total,
     unreadCount,
     loading,

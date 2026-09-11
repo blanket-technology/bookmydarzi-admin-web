@@ -978,7 +978,7 @@ export default function BridgeEmployeeDetailPage() {
                     <RotateCcw size={15} /> Cancel
                   </button>
                   <button type="button" onClick={saveEdit} disabled={saving}
-                    className="flex-1 h-11 px-8 bg-[#007A7A] hover:bg-[#006B6B] disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all">
+                    className="flex-1 h-11 px-8 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all">
                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                     {saving ? "Saving…" : "Save Changes"}
                   </button>

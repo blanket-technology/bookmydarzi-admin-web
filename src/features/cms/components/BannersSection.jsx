@@ -52,6 +52,7 @@ export default function BannersSection() {
     form,
     saving,
     saveMsg,
+    deletingId,
     setShowModal,
     updateForm,
     openCreate,
@@ -123,8 +124,10 @@ export default function BannersSection() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-2">
-                        <button onClick={() => openEdit(b)} className="p-1.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100"><Pencil size={13} /></button>
-                        <button onClick={() => handleDelete(id)} className="p-1.5 text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100"><Trash2 size={13} /></button>
+                        <button onClick={() => openEdit(b)} disabled={deletingId === id} className="p-1.5 text-blue-600 bg-blue-50 border border-blue-100 rounded-lg hover:bg-blue-100 disabled:opacity-50"><Pencil size={13} /></button>
+                        <button onClick={() => handleDelete(id)} disabled={deletingId === id} className="p-1.5 text-rose-600 bg-rose-50 border border-rose-100 rounded-lg hover:bg-rose-100 disabled:opacity-50">
+                          {deletingId === id ? <Loader2 size={13} className="animate-spin" /> : <Trash2 size={13} />}
+                        </button>
                       </div>
                     </td>
                   </tr>
