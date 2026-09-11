@@ -5,6 +5,7 @@ export const INIT_FORM = {
   discount_percent: "",
   discount_amount: "",
   min_order_value: "",
+  max_discount_amount: "",
   coupon_code: "",
   image_url: "",
   valid_from: "",

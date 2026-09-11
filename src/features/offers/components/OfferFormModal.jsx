@@ -109,9 +109,29 @@ export default function OfferFormModal({
             />
           </Field>
         )}
+        {form.discount_type === "percentage" && (
+          <Field label="Max Discount Cap (₹)" hint="Caps the % discount on large orders. Leave blank for uncapped.">
+            <input
+              type="number"
+              min="1"
+              step="1"
+              value={form.max_discount_amount}
+              onChange={(e) => onFormChange({ max_discount_amount: e.target.value })}
+              className={inp}
+              placeholder="e.g. 500"
+            />
+          </Field>
+        )}
       </div>
 
-      <Field label="Minimum Order Value (₹)" hint="Order subtotal must reach this amount for the offer to be applicable. Leave 0 for no minimum.">
+      <Field
+        label="Minimum Order Value (₹)"
+        hint={
+          form.discount_type === "flat"
+            ? "Must be greater than the discount amount, so the coupon can't wipe out most/all of its own qualifying order."
+            : "Order subtotal must reach this amount for the offer to be applicable. Leave 0 for no minimum."
+        }
+      >
         <input
           type="number"
           min="0"

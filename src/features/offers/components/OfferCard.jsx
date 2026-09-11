@@ -35,6 +35,7 @@ export default function OfferCard({ offer, onEdit, onDelete, onToggle }) {
         ) : offer.DiscountPercent > 0 ? (
           <span className="absolute top-2.5 left-2.5 flex items-center gap-1 bg-teal-600 text-white text-xs font-bold px-2.5 py-1 rounded-full shadow">
             <Percent size={10} /> {offer.DiscountPercent}% off
+            {offer.MaxDiscountAmount > 0 ? ` up to ₹${offer.MaxDiscountAmount.toLocaleString("en-IN")}` : ""}
           </span>
         ) : null}
         {isDisabled ? (
