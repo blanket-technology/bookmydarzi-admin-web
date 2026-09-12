@@ -21,6 +21,7 @@ export default function OrderDetailsPage() {
     orders,
     total,
     fetching,
+    refreshing,
     fetchError,
     filterStatus,
     filterPayment,
@@ -151,9 +152,17 @@ export default function OrderDetailsPage() {
               fetchOrders();
             }
           }}
-          className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ml-auto"
+          disabled={refreshing}
+          title={refreshing ? "Refreshing…" : "Refresh"}
+          className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ml-auto disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <RefreshCw size={14} /> Refresh
+          {/* isLoading (fetching) only covers the very first load of a given
+              queryKey - refreshing (isFetching) is what actually reflects a
+              refetch in progress, including the manual Refresh click.
+              Without this the button visually did nothing while a request
+              was genuinely in flight. */}
+          <RefreshCw size={14} className={refreshing ? "animate-spin" : undefined} />
+          {refreshing ? "Refreshing…" : "Refresh"}
         </button>
       </div>
 

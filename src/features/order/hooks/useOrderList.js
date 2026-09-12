@@ -106,7 +106,7 @@ export default function useOrderList() {
     debouncedSearch,
   });
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
+  const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey,
     queryFn: () => getOrdersList({ endpoint: resolveOrdersEndpoint(), params }),
     enabled: Boolean(token),
@@ -125,7 +125,17 @@ export default function useOrderList() {
 
   const orders = data?.orders ?? [];
   const total = data?.total ?? orders.length;
+  // isLoading (the full-table skeleton) is only true on the very first
+  // fetch for a given queryKey - it stays false for every refetch after
+  // that, including the manual Refresh button, because placeholderData
+  // keeps the old page visible while the new one loads. Clicking Refresh
+  // therefore did trigger a real request, but nothing on screen ever
+  // indicated it - no spinner, and if the data came back unchanged the
+  // table looked frozen, indistinguishable from the button doing nothing.
+  // isFetching covers both cases, so it drives the Refresh button's own
+  // spin icon separately from the table's full-loading state below.
   const fetching = isLoading;
+  const refreshing = isFetching;
   const fetchError = isError ? extractErrorMessage(error, "Failed to load orders.") : null;
 
   useEffect(() => {
@@ -155,6 +165,7 @@ export default function useOrderList() {
     orders,
     total,
     fetching,
+    refreshing,
     fetchError,
     filterStatus,
     filterPayment,
