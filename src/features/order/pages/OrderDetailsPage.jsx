@@ -119,7 +119,21 @@ export default function OrderDetailsPage() {
               </button>
             )}
             <button
-              onClick={() => { setPage(1); fetchOrders(); }}
+              onClick={() => {
+                // setPage(1) alone is enough when not already on page 1 - it
+                // changes the React Query queryKey, which auto-refetches.
+                // Calling refetch() in the same handler used to race that:
+                // refetch() closes over THIS render's still-stale page value
+                // (React hasn't re-rendered with page=1 yet), so it could
+                // refire the old page's query a moment before/after the
+                // real one - on page 1 already, neither fired anything
+                // different, which read as "Refresh does nothing."
+                if (page !== 1) {
+                  setPage(1);
+                } else {
+                  fetchOrders();
+                }
+              }}
               className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
             >
               <RefreshCw size={13} /> Refresh
@@ -130,6 +144,16 @@ export default function OrderDetailsPage() {
 
       {!isTailor && showFilters && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 shadow-sm">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Advanced Filters</p>
+            <button
+              onClick={() => setShowFilters(false)}
+              title="Close filters"
+              className="text-gray-400 hover:text-gray-600 p-1 -m-1 rounded-lg hover:bg-gray-100"
+            >
+              <X size={16} />
+            </button>
+          </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div>
               <label className="block text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-1">Payment Status</label>
@@ -176,13 +200,19 @@ export default function OrderDetailsPage() {
               />
             </div>
           </div>
-          {activeFilterCount > 0 && (
-            <div className="flex justify-end mt-3">
+          <div className="flex items-center justify-end gap-4 mt-3 pt-3 border-t border-gray-100">
+            {activeFilterCount > 0 && (
               <button onClick={clearAdvancedFilters} className="flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-rose-600">
                 <X size={13} /> Clear filters
               </button>
-            </div>
-          )}
+            )}
+            <button
+              onClick={() => setShowFilters(false)}
+              className="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-teal-700 hover:bg-teal-800 text-white"
+            >
+              Done
+            </button>
+          </div>
         </div>
       )}
 
