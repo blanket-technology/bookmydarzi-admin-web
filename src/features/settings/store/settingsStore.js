@@ -41,8 +41,11 @@ export const useSettingsStore = create((set, get) => ({
         },
         billingLoading: false,
       });
-    } catch {
-      set({ billingError: "Failed to load billing settings.", billingLoading: false });
+    } catch (err) {
+      set({
+        billingError: extractErrorMessage(err, "Failed to load billing settings."),
+        billingLoading: false,
+      });
     }
   },
 
@@ -70,7 +73,7 @@ export const useSettingsStore = create((set, get) => ({
       set({
         billingSaveMsg: {
           type: "error",
-          text: err.response?.data?.message || "Save failed.",
+          text: extractErrorMessage(err, "Save failed."),
         },
       });
     } finally {
@@ -89,7 +92,7 @@ export const useSettingsStore = create((set, get) => ({
       set({
         cacheMsg: {
           type: "error",
-          text: err.response?.data?.message || "Failed to clear cache.",
+          text: extractErrorMessage(err, "Failed to clear cache."),
         },
       });
     } finally {
@@ -108,8 +111,11 @@ export const useSettingsStore = create((set, get) => ({
         auditPage: page,
         auditLoading: false,
       });
-    } catch {
-      set({ auditError: "Failed to load audit logs.", auditLoading: false });
+    } catch (err) {
+      set({
+        auditError: extractErrorMessage(err, "Failed to load audit logs."),
+        auditLoading: false,
+      });
     }
   },
 

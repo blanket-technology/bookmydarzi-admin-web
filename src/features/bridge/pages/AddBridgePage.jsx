@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   User, Mail, Phone, Lock, Eye, EyeOff,
-  CheckCircle2, XCircle, AlertCircle, RotateCcw, UserPlus, X, Bike,
+  AlertTriangle, CheckCircle2, XCircle, AlertCircle, RotateCcw, UserPlus, X, Bike,
   Briefcase, MapPin, Truck, Clock, Calendar, ArrowLeft,
   ShieldCheck, CreditCard, FileText, ChevronDown,
 } from "lucide-react";
@@ -75,8 +75,8 @@ export default function AddBridgePage() {
         <div className="flex-1 overflow-y-auto">
           <div className="p-8 space-y-8">
             {status && (
-              <div className={`rounded-xl px-4 py-3.5 text-sm font-semibold flex items-start gap-3 border-2 ${status === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : "bg-red-50 text-red-800 border-red-200"}`}>
-                {status === "success" ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" /> : <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />}
+              <div className={`rounded-xl px-4 py-3.5 text-sm font-semibold flex items-start gap-3 border-2 ${status === "success" ? "bg-emerald-50 text-emerald-800 border-emerald-200" : status === "partial" ? "bg-amber-50 text-amber-800 border-amber-200" : "bg-red-50 text-red-800 border-red-200"}`}>
+                {status === "success" ? <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" /> : status === "partial" ? <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" /> : <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />}
                 <span className="flex-1">{msg}</span>
                 <button type="button" onClick={() => setStatus(null)} className="text-gray-400 hover:text-gray-600 shrink-0">
                   <X size={16} />

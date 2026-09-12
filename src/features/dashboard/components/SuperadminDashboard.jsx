@@ -33,6 +33,7 @@ export default function SuperadminDashboard() {
   const error = useDashboardStore((s) => s.error);
   const recentOrders = useDashboardStore((s) => s.recentOrders);
   const ordersLoading = useDashboardStore((s) => s.ordersLoading);
+  const ordersError = useDashboardStore((s) => s.ordersError);
   const fetchAdminDashboard = useDashboardStore((s) => s.fetchAdminDashboard);
   const fetchRecentOrders = useDashboardStore((s) => s.fetchRecentOrders);
 
@@ -177,7 +178,7 @@ export default function SuperadminDashboard() {
         )}
 
         <div className="mt-8">
-          <RecentOrdersTable orders={recentOrders} isLoading={ordersLoading} showAmount />
+          <RecentOrdersTable orders={recentOrders} isLoading={ordersLoading} error={ordersError} showAmount />
         </div>
       </main>
     </div>

@@ -12,8 +12,8 @@ export const useBannerStore = create((set, get) => ({
     try {
       const banners = await cmsService.getHomeBanners();
       set({ banners, loading: false });
-    } catch {
-      set({ error: "Failed to load banners.", loading: false });
+    } catch (err) {
+      set({ error: extractErrorMessage(err, "Failed to load banners."), loading: false });
     }
   },
 

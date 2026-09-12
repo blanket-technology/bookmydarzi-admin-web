@@ -1,45 +1,12 @@
 import { create } from "zustand";
-import { extractErrorMessage } from "../../../utils/formatters.js";
-import * as offerService from "../services/offerService.js";
 
-export const useOfferStore = create((set, get) => ({
-  offers: [],
-  loading: true,
-  error: "",
+// Only the expiry filter is actually read from here - list fetching and
+// create/update/delete/toggle mutations migrated to React Query in
+// useOffers.js (which handles loading/error state and cache invalidation
+// per-call there instead). The old fetchOffers/deleteOffer/toggleOffer/
+// saveOffer actions that used to live here were dead code with no try/catch
+// or error handling at all - kept only the field useOffers.js still reads.
+export const useOfferStore = create((set) => ({
   expiryFilter: "",
-
   setExpiryFilter: (expiryFilter) => set({ expiryFilter }),
-
-  fetchOffers: async () => {
-    set({ loading: true, error: "" });
-    try {
-      const offers = await offerService.getOffers();
-      set({ offers, loading: false });
-    } catch (err) {
-      set({
-        error: extractErrorMessage(err, "Failed to load offers."),
-        loading: false,
-      });
-    }
-  },
-
-  deleteOffer: async (offer) => {
-    await offerService.deleteOffer(offer.Id);
-    await get().fetchOffers();
-  },
-
-  toggleOffer: async (offer) => {
-    const nextActive = !offer.IsActive;
-    await offerService.toggleOfferActive(offer.Id, nextActive);
-    await get().fetchOffers();
-  },
-
-  saveOffer: async (editingId, payload) => {
-    if (editingId) {
-      await offerService.updateOffer(editingId, payload);
-    } else {
-      await offerService.createOffer(payload);
-    }
-    await get().fetchOffers();
-  },
 }));

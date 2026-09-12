@@ -14,6 +14,7 @@ export default function AdminOpsDashboard() {
   const error = useDashboardStore((s) => s.error);
   const recentOrders = useDashboardStore((s) => s.recentOrders);
   const ordersLoading = useDashboardStore((s) => s.ordersLoading);
+  const ordersError = useDashboardStore((s) => s.ordersError);
   const fetchAdminDashboard = useDashboardStore((s) => s.fetchAdminDashboard);
   const fetchRecentOrders = useDashboardStore((s) => s.fetchRecentOrders);
 
@@ -132,7 +133,7 @@ export default function AdminOpsDashboard() {
         )}
 
         <div className="mt-8">
-          <RecentOrdersTable orders={recentOrders} isLoading={ordersLoading} showAmount={false} />
+          <RecentOrdersTable orders={recentOrders} isLoading={ordersLoading} error={ordersError} showAmount={false} />
         </div>
       </main>
     </div>

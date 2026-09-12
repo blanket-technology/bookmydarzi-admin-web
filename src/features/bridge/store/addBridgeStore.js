@@ -104,7 +104,10 @@ export const useAddBridgeStore = create((set, get) => ({
 
       if (failures.length > 0) {
         set({
-          status: "success",
+          // Distinct from "success" - the account WAS created, but not
+          // everything the admin submitted succeeded (mirrors
+          // addTailorStore.js's same fix).
+          status: "partial",
           msg: `Employee account created!${bridgeId ? ` Bridge ID: ${bridgeId}.` : ""} However, some details failed to save (${failures.join("; ")}). This employee is Pending Verification - add the missing documents from their profile page.`,
         });
         reset();

@@ -1,3 +1,4 @@
+import { formatEmployeeId } from "../../../utils/formatters.js";
 
 export const validators = {
   name: (v) => (v.trim().length < 3 ? "Name must be at least 3 characters" : ""),
@@ -21,12 +22,19 @@ export const accountValidators = {
 export function filterBridgeStaff(staff, { search, filterActive }) {
   const q = search.trim().toLowerCase();
   return staff.filter((s) => {
+    // Match partial numeric id, user_code, or the formatted "#E-..." display
+    // ID shown on the list/detail page (formatEmployeeId) - an exact-only
+    // match on the raw numeric id meant typing what's actually on screen
+    // never found anything (same bug fixed on the tailor module's search).
+    const displayId = formatEmployeeId(s.id, s.user_code).toLowerCase();
     const matchSearch =
       !q ||
       (s.full_name || "").toLowerCase().includes(q) ||
       (s.email || "").toLowerCase().includes(q) ||
       (s.mobile || "").includes(q) ||
-      String(s.id) === q;
+      String(s.id).includes(q) ||
+      (s.user_code || "").toLowerCase().includes(q) ||
+      displayId.includes(q);
     const matchActive =
       filterActive === "" || (filterActive === "true" ? s.is_active : !s.is_active);
     return matchSearch && matchActive;

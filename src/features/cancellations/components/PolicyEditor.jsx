@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { SlidersHorizontal, XCircle } from "lucide-react";
 import { getCancellationPolicy } from "../services/cancellationService.js";
 import LoadingState from "../../../components/common/LoadingState.jsx";
+import { extractErrorMessage } from "../../../utils/formatters.js";
 
 export default function PolicyEditor({ onClose }) {
   const [policies, setPolicies] = useState([]);
@@ -11,7 +12,7 @@ export default function PolicyEditor({ onClose }) {
   useEffect(() => {
     getCancellationPolicy()
       .then((data) => setPolicies(data))
-      .catch(() => setError("Failed to load policy."))
+      .catch((err) => setError(extractErrorMessage(err, "Failed to load policy.")))
       .finally(() => setLoading(false));
   }, []);
 

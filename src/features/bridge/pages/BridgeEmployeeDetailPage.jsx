@@ -287,21 +287,30 @@ export default function BridgeEmployeeDetailPage() {
         total_earnings: editForm.total_earnings === "" ? null : Number(editForm.total_earnings),
         incentives_earned: editForm.incentives_earned === "" ? null : Number(editForm.incentives_earned),
       };
-      await api.patch(`/admin/staff/${staffId}`, accountPayload);
-      const res = await api.patch(`/admin/staff/${staffId}/bridge-profile`, profilePayload);
-      let updated = res.data;
-      // Admin-on-behalf-of-user upload - POST /admin/users/{id}/photo
-      // (distinct from the self-service-only POST /users/profile/photo).
-      // staffId here IS the USERS.Id (route param), unlike Tailor's page
-      // where the URL param is tailor_id and a separate user_id lookup is
-      // needed.
+      // Photo uploads BEFORE either profile PATCH, not after - previously a
+      // failed upload here left both PATCHes already committed on the
+      // backend while the UI reported the whole save as failed, with no
+      // rollback (same class of bug fixed on the Tailor edit-save flow -
+      // see tailorDetailStore.js's saveProfile comment). Running the upload
+      // first means an upload failure aborts before anything is written.
+      let uploadedPhotoUrl;
       if (photo) {
         const fd = new FormData();
         fd.append("file", photo);
+        // Admin-on-behalf-of-user upload - POST /admin/users/{id}/photo
+        // (distinct from the self-service-only POST /users/profile/photo).
+        // staffId here IS the USERS.Id (route param), unlike Tailor's page
+        // where the URL param is tailor_id and a separate user_id lookup is
+        // needed.
         const photoRes = await api.post(`/admin/users/${staffId}/photo`, fd);
-        updated = { ...updated, profile_image_url: photoRes.data?.profile_image_url ?? updated.profile_image_url };
+        uploadedPhotoUrl = photoRes.data?.profile_image_url;
         setPhoto(null);
       }
+      await api.patch(`/admin/staff/${staffId}`, accountPayload);
+      const res = await api.patch(`/admin/staff/${staffId}/bridge-profile`, profilePayload);
+      const updated = uploadedPhotoUrl
+        ? { ...res.data, profile_image_url: uploadedPhotoUrl }
+        : res.data;
       setStaff(updated);
       setSaveMsg("success");
       setEditMode(false);

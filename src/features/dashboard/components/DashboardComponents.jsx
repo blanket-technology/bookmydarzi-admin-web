@@ -54,7 +54,7 @@ export function MiniStat({ label, value, colorClass, borderClass, textClass, onC
   );
 }
 
-export function RecentOrdersTable({ orders, isLoading, showAmount = true }) {
+export function RecentOrdersTable({ orders, isLoading, error, showAmount = true }) {
   const navigate = useNavigate();
   return (
     <div className="bg-white rounded-xl border border-slate-100 shadow-sm overflow-hidden">
@@ -68,6 +68,8 @@ export function RecentOrdersTable({ orders, isLoading, showAmount = true }) {
             <div key={i} className="h-10 bg-slate-50 animate-pulse rounded-lg" />
           ))}
         </div>
+      ) : error ? (
+        <div className="p-8 text-center text-sm text-red-500">{error}</div>
       ) : orders.length === 0 ? (
         <div className="p-8 text-center text-sm text-slate-400">No orders yet.</div>
       ) : (
