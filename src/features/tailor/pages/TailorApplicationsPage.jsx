@@ -1,10 +1,12 @@
-import { Filter, X, CheckCircle2, XCircle, AlertCircle, Loader2, Eye, Search, RefreshCw, FileText, ImageOff } from "lucide-react";
+import { Filter, X, CheckCircle2, XCircle, AlertCircle, AlertTriangle, Loader2, Eye, Search, RefreshCw, FileText, ImageOff } from "lucide-react";
 import { resolveMediaUrl } from "../../../services/api";
 import PageHeader from "../../../components/common/PageHeader";
 import Pagination from "../../../components/common/Pagination";
 import StatusBadge from "../../../components/common/StatusBadge";
 import useTailorApplications from "../hooks/useTailorApplications.js";
 import { APPLICATION_STATUS_COLOR } from "../constants/tailorConstants.js";
+import { getStoredUser } from "../../auth/index.js";
+import { ROLES, normalizeRole } from "../../../constants/permissions.js";
 
 const STATUS_COLOR = APPLICATION_STATUS_COLOR;
 
@@ -61,6 +63,8 @@ const TailorApplicationsPage = () => {
     rejectLoading,
     detailApp,
     detailLoading,
+    panWaiverTarget,
+    panWaiverReason,
     setSearch,
     setStatus,
     setPage,
@@ -69,16 +73,31 @@ const TailorApplicationsPage = () => {
     setRejectTarget,
     setRejectReason,
     setDetailApp,
+    setPanWaiverTarget,
+    setPanWaiverReason,
     fetchApplications,
     handleSearch,
     handleApprove,
     handleRejectConfirm,
+    handlePanWaiverConfirm,
     openDetail,
   } = useTailorApplications();
+
+  // Waiving PAN is Superadmin-only server-side (see
+  // approve_tailor_application) - hidden here for a plain Admin rather than
+  // shown-then-rejected with a 422, since there's nothing they can do about
+  // it anyway. A regular Admin can still approve any application that
+  // already has a PAN on file via the normal Approve button.
+  const isSuperadmin = normalizeRole(getStoredUser()?.Role) === ROLES.SUPERADMIN;
 
   const openRejectModal = (app) => {
     setRejectTarget(app);
     setRejectReason("");
+  };
+
+  const openPanWaiverModal = (app) => {
+    setPanWaiverTarget(app);
+    setPanWaiverReason("");
   };
 
   return (
@@ -191,18 +210,28 @@ const TailorApplicationsPage = () => {
 
             {!detailLoading && detailApp.status?.toLowerCase() === "pending" && (
               <div className="flex gap-3 p-5 border-t">
-                <button
-                  onClick={() => {
-                    const id = detailApp.id;
-                    const overridePan = !detailApp.pan_card_url;
-                    setDetailApp(null);
-                    handleApprove(id, { overridePan });
-                  }}
-                  disabled={actionLoading === detailApp.id}
-                  className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white py-2.5 rounded-xl text-sm font-semibold"
-                >
-                  <CheckCircle2 size={15} /> {detailApp.pan_card_url ? "Approve" : "Approve (Waive PAN)"}
-                </button>
+                {detailApp.pan_card_url || isSuperadmin ? (
+                  <button
+                    onClick={() => {
+                      const app = detailApp;
+                      const overridePan = !app.pan_card_url;
+                      setDetailApp(null);
+                      if (overridePan) {
+                        openPanWaiverModal(app);
+                      } else {
+                        handleApprove(app.id);
+                      }
+                    }}
+                    disabled={actionLoading === detailApp.id}
+                    className="flex-1 flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white py-2.5 rounded-xl text-sm font-semibold"
+                  >
+                    <CheckCircle2 size={15} /> {detailApp.pan_card_url ? "Approve" : "Approve (Waive PAN)"}
+                  </button>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 py-2.5 rounded-xl text-sm font-semibold text-center px-2">
+                    No PAN on file - only a Superadmin can waive this
+                  </div>
+                )}
                 <button
                   onClick={() => {
                     const app = detailApp;
@@ -261,6 +290,57 @@ const TailorApplicationsPage = () => {
                 className="flex-1 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold disabled:opacity-60"
               >
                 {rejectLoading ? "Rejecting…" : "Reject"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PAN Waiver Modal - Superadmin-only, requires a reason (backend now
+          rejects override_pan_requirement=true with no reason attached, see
+          approve_tailor_application). */}
+      {panWaiverTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-gray-800 flex items-center gap-2">
+                <AlertTriangle size={17} className="text-amber-500" /> Approve Without PAN
+              </h3>
+              <button
+                onClick={() => setPanWaiverTarget(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">
+              Approving{" "}
+              <span className="font-semibold text-gray-800">
+                {panWaiverTarget.full_name}
+              </span>{" "}
+              without a PAN card on file. This is logged to the audit trail and stays visible on
+              their tailor profile as a payout-risk flag. Please explain why:
+            </p>
+            <textarea
+              rows={3}
+              value={panWaiverReason}
+              onChange={(e) => setPanWaiverReason(e.target.value)}
+              placeholder="Minimum 5 characters, e.g. 'PAN pending, following up separately'"
+              className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-amber-300"
+            />
+            <div className="flex gap-3 mt-4">
+              <button
+                onClick={() => setPanWaiverTarget(null)}
+                className="flex-1 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handlePanWaiverConfirm}
+                disabled={actionLoading === panWaiverTarget.id || panWaiverReason.trim().length < 5}
+                className="flex-1 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-sm font-semibold disabled:opacity-60"
+              >
+                {actionLoading === panWaiverTarget.id ? "Approving…" : "Confirm Approve"}
               </button>
             </div>
           </div>

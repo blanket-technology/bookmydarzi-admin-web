@@ -17,6 +17,8 @@ export default function useTailorApplications() {
   const rejectLoading = useTailorApplicationsStore((s) => s.rejectLoading);
   const detailApp = useTailorApplicationsStore((s) => s.detailApp);
   const detailLoading = useTailorApplicationsStore((s) => s.detailLoading);
+  const panWaiverTarget = useTailorApplicationsStore((s) => s.panWaiverTarget);
+  const panWaiverReason = useTailorApplicationsStore((s) => s.panWaiverReason);
 
   const setSearch = useTailorApplicationsStore((s) => s.setSearch);
   const setStatus = useTailorApplicationsStore((s) => s.setStatus);
@@ -26,10 +28,13 @@ export default function useTailorApplications() {
   const setRejectTarget = useTailorApplicationsStore((s) => s.setRejectTarget);
   const setRejectReason = useTailorApplicationsStore((s) => s.setRejectReason);
   const setDetailApp = useTailorApplicationsStore((s) => s.setDetailApp);
+  const setPanWaiverTarget = useTailorApplicationsStore((s) => s.setPanWaiverTarget);
+  const setPanWaiverReason = useTailorApplicationsStore((s) => s.setPanWaiverReason);
   const fetchApplications = useTailorApplicationsStore((s) => s.fetchApplications);
   const handleSearch = useTailorApplicationsStore((s) => s.handleSearch);
   const handleApprove = useTailorApplicationsStore((s) => s.handleApprove);
   const handleRejectConfirm = useTailorApplicationsStore((s) => s.handleRejectConfirm);
+  const handlePanWaiverConfirm = useTailorApplicationsStore((s) => s.handlePanWaiverConfirm);
   const openDetail = useTailorApplicationsStore((s) => s.openDetail);
 
   useEffect(() => {
@@ -52,6 +57,8 @@ export default function useTailorApplications() {
     rejectLoading,
     detailApp,
     detailLoading,
+    panWaiverTarget,
+    panWaiverReason,
     setSearch,
     setStatus,
     setPage,
@@ -60,10 +67,13 @@ export default function useTailorApplications() {
     setRejectTarget,
     setRejectReason,
     setDetailApp,
+    setPanWaiverTarget,
+    setPanWaiverReason,
     fetchApplications,
     handleSearch,
     handleApprove,
     handleRejectConfirm,
+    handlePanWaiverConfirm,
     openDetail,
   };
 }

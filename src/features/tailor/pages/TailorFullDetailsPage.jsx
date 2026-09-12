@@ -16,7 +16,7 @@ import {
   Save, KeyRound, Trash2,
   User, Mail, Phone, Scissors, ShieldCheck,
   CreditCard, FileText, Camera, Loader2,
-  CheckCircle2, XCircle, AlertCircle,
+  CheckCircle2, XCircle, AlertCircle, AlertTriangle,
   X, UserCircle2, RotateCcw, Navigation, Wifi, WifiOff,
   LayoutGrid, Package, TrendingUp, History, RefreshCw, ChevronRight, ListChecks,
 } from "lucide-react";
@@ -563,6 +563,14 @@ export default function TailorFullDetailsPage() {
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${form.verify === "Verified" ? "bg-blue-400/20 text-blue-100" : "bg-amber-400/20 text-amber-100"}`}>
                 {form.verify || "-"}
               </span>
+              {liveData.pan_waived && (
+                <span
+                  className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-400/20 text-rose-100"
+                  title={liveData.pan_waiver_reason || "Approved without a PAN card on file"}
+                >
+                  <AlertTriangle size={10} /> PAN Waived
+                </span>
+              )}
             </>
           }
           metaLine={<>{formatTailorId(tailorId, liveData.user_code || raw.user_code, form.location)} &nbsp;·&nbsp; {form.email || "N/A"} &nbsp;·&nbsp; {form.mobile || "N/A"}</>}
@@ -852,6 +860,21 @@ export default function TailorFullDetailsPage() {
                     </span>
                   }
                 />
+
+                {liveData.pan_waived && (
+                  <div className="flex items-start gap-2.5 bg-rose-50 border border-rose-200 text-rose-800 px-4 py-3 rounded-xl text-xs">
+                    <AlertTriangle size={15} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">This tailor was approved without a PAN card on file.</p>
+                      {liveData.pan_waiver_reason && (
+                        <p className="mt-0.5 text-rose-700">Reason: {liveData.pan_waiver_reason}</p>
+                      )}
+                      <p className="mt-0.5 text-rose-600">
+                        Verify identity and collect a PAN before large or repeated payouts.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
                   <KycCard

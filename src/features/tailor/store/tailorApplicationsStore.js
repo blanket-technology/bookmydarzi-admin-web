@@ -27,6 +27,8 @@ export const useTailorApplicationsStore = create((set, get) => ({
   rejectLoading: false,
   detailApp: null,
   detailLoading: false,
+  panWaiverTarget: null,
+  panWaiverReason: "",
 
   setSearch: (search) => set({ search }),
   setStatus: (status) => set({ status, page: DEFAULT_PAGE }),
@@ -36,6 +38,8 @@ export const useTailorApplicationsStore = create((set, get) => ({
   setRejectTarget: (rejectTarget) => set({ rejectTarget, rejectReason: "" }),
   setRejectReason: (rejectReason) => set({ rejectReason }),
   setDetailApp: (detailApp) => set({ detailApp }),
+  setPanWaiverTarget: (panWaiverTarget) => set({ panWaiverTarget, panWaiverReason: "" }),
+  setPanWaiverReason: (panWaiverReason) => set({ panWaiverReason }),
 
   fetchApplications: async () => {
     const { page, limit, search, status } = get();
@@ -61,26 +65,49 @@ export const useTailorApplicationsStore = create((set, get) => ({
     get().fetchApplications();
   },
 
-  handleApprove: async (applicationId, { overridePan = false } = {}) => {
-    if (
-      !(await confirmDialog({
-        title: overridePan ? "Approve without a PAN card on file?" : "Approve this tailor application?",
-        confirmLabel: "Yes, Approve",
-        tone: "neutral",
-      }))
-    ) {
-      return;
+  // Plain approve (has a PAN on file) still goes through a simple confirm
+  // dialog - only the PAN-waiver path needs a typed reason, collected via
+  // panWaiverTarget/handlePanWaiverConfirm below, since the backend now
+  // requires one (see approve_tailor_application) and it's a Superadmin-only
+  // action worth deliberately typing out, not just confirming.
+  handleApprove: async (applicationId, { overridePan = false, panWaiverReason = "" } = {}) => {
+    if (!overridePan) {
+      if (
+        !(await confirmDialog({
+          title: "Approve this tailor application?",
+          confirmLabel: "Yes, Approve",
+          tone: "neutral",
+        }))
+      ) {
+        return;
+      }
     }
     set({ actionLoading: applicationId });
     try {
-      const res = await approveApplication(applicationId, overridePan);
+      const res = await approveApplication(applicationId, overridePan, panWaiverReason);
       notifySuccess(res.message || "Application approved.");
       get().fetchApplications();
+      return true;
     } catch (err) {
       notifyError(extractErrorMessage(err, "Failed to approve application."));
+      return false;
     } finally {
       set({ actionLoading: null });
     }
+  },
+
+  handlePanWaiverConfirm: async () => {
+    const { panWaiverTarget, panWaiverReason } = get();
+    if (!panWaiverTarget) return;
+    if (panWaiverReason.trim().length < 5) {
+      notifyError("Please enter a reason (at least 5 characters) for waiving the PAN requirement.");
+      return;
+    }
+    const ok = await get().handleApprove(panWaiverTarget.id, {
+      overridePan: true,
+      panWaiverReason: panWaiverReason.trim(),
+    });
+    if (ok) set({ panWaiverTarget: null, panWaiverReason: "" });
   },
 
   handleRejectConfirm: async () => {

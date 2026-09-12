@@ -84,10 +84,13 @@ export async function getApplicationById(id) {
   return response.data;
 }
 
-export async function approveApplication(applicationId, overridePan = false) {
+export async function approveApplication(applicationId, overridePan = false, panWaiverReason = "") {
   const response = await api.patch(
     `/admin/tailor-applications/${applicationId}/approve`,
-    { override_pan_requirement: overridePan },
+    {
+      override_pan_requirement: overridePan,
+      ...(overridePan ? { pan_waiver_reason: panWaiverReason } : {}),
+    },
   );
   return response.data;
 }

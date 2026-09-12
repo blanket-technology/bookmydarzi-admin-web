@@ -173,7 +173,7 @@ export const PAYMENT_ACTIONS_ALLOWED = {
   [ROLES.TAILOR]: false,
 };
 
-const normalizeRole = (role) => {
+export const normalizeRole = (role) => {
   if (!role) return undefined;
   const value = String(role).toLowerCase().trim();
   return value.length > 0 ? value : undefined;
