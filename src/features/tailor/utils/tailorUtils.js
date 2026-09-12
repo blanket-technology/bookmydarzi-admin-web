@@ -1,4 +1,5 @@
 import { INIT_FILTERS } from "../constants/tailorConstants.js";
+import { formatTailorId } from "../../../utils/formatters.js";
 
 export const validators = {
   full_name: (v) => (v.trim().length < 3 ? "Name must be at least 3 characters" : ""),
@@ -43,12 +44,19 @@ export function formFromData(d) {
 export function filterTailors(tailors, { search, filters }) {
   const q = search.trim().toLowerCase();
   return tailors.filter((tailor) => {
+    // Admins search by whatever ID they can see - the raw numeric id, a
+    // backend-issued tailor_code, or the formatted "T-XXX00042" display ID
+    // shown in the list/detail page (formatTailorId) - not just an exact
+    // match on the raw numeric id, which nobody actually sees on screen.
+    const displayId = formatTailorId(tailor.tailor_id, tailor.tailor_code, tailor.city).toLowerCase();
     const searchMatch =
       !q ||
       tailor.full_name?.toLowerCase().includes(q) ||
       tailor.email?.toLowerCase().includes(q) ||
       tailor.mobile?.includes(q) ||
-      String(tailor.tailor_id) === q;
+      String(tailor.tailor_id).includes(q) ||
+      tailor.tailor_code?.toLowerCase().includes(q) ||
+      displayId.includes(q);
 
     const statusMatch =
       filters.status.length === 0 ||

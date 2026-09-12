@@ -271,7 +271,15 @@ export default function TailorDetailsPage() {
                           pending
                         </p>
                       </div>
-                      <StatusBadge status={w.is_available ? "active" : "inactive"} label={w.is_available ? "Available" : "Busy"} />
+                      {/* is_available is the tailor's own manual availability
+                          toggle, set independently of active_orders/
+                          pending_orders below - a tailor can be marked "Busy"
+                          with 0/0 orders (they've paused new work manually) or
+                          "Available" with a full queue. Labeled "Availability"
+                          rather than a workload-derived "Busy" so the two
+                          numbers next to it are never read as contradicting
+                          it. */}
+                      <StatusBadge status={w.is_available ? "active" : "inactive"} label={w.is_available ? "Available" : "Unavailable"} />
                     </div>
                   ))}
                 </div>

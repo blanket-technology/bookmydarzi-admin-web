@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   RotateCcw,
   UserPlus,
+  AlertTriangle,
   CheckCircle2,
   XCircle,
   AlertCircle,
@@ -96,11 +97,15 @@ export default function AddTailorPage() {
                 className={`rounded-xl px-4 py-3.5 text-sm font-semibold flex items-start gap-3 border-2 ${
                   status === "success"
                     ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                    : "bg-red-50 text-red-800 border-red-200"
+                    : status === "partial"
+                      ? "bg-amber-50 text-amber-800 border-amber-200"
+                      : "bg-red-50 text-red-800 border-red-200"
                 }`}
               >
                 {status === "success" ? (
                   <CheckCircle2 size={18} className="text-emerald-500 shrink-0 mt-0.5" />
+                ) : status === "partial" ? (
+                  <AlertTriangle size={18} className="text-amber-500 shrink-0 mt-0.5" />
                 ) : (
                   <XCircle size={18} className="text-red-500 shrink-0 mt-0.5" />
                 )}

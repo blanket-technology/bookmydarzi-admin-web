@@ -148,11 +148,12 @@ export const useTailorDetailStore = create((set, get) => ({
   },
 
   deleteTailorProfile: async (tailorId) => {
+    if (!tailorId) return { ok: false, error: "Invalid tailor." };
     try {
-      if (tailorId) await deleteTailor(tailorId);
+      await deleteTailor(tailorId);
       return { ok: true };
-    } catch {
-      return { ok: true };
+    } catch (err) {
+      return { ok: false, error: extractErrorMessage(err, "Failed to delete tailor.") };
     }
   },
 

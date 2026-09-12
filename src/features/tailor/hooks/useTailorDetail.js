@@ -161,7 +161,11 @@ export default function useTailorDetail() {
   const handleDelete = async () => {
     setShowDeleteConfirm(false);
     const tid = liveData.tailor_id || raw.tailorId;
-    await deleteTailorProfile(tid);
+    const result = await deleteTailorProfile(tid);
+    if (!result.ok) {
+      notifyError(result.error || "Failed to delete tailor.");
+      return;
+    }
     navigate(-1);
   };
 

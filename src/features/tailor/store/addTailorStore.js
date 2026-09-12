@@ -102,7 +102,10 @@ export const useAddTailorStore = create((set, get) => ({
         }
         if (failures.length > 0) {
           set({
-            status: "success",
+            // Distinct from "success" - the account WAS created, but not
+            // everything the admin submitted succeeded, so this must not
+            // render identically to a clean success (see AddTailorPage.jsx).
+            status: "partial",
             msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} However, some KYC documents failed to upload (${failures.join("; ")}). This tailor is Pending Verification - add the missing documents from their profile page.`,
           });
           reset();
