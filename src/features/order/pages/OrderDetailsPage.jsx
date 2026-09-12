@@ -68,79 +68,94 @@ export default function OrderDetailsPage() {
       <PageHeader
         title="Order Management"
         subtitle={`${total} order${total !== 1 ? "s" : ""}`}
-        actions={
-          <>
-            {!isTailor && (
-              <div className="relative">
-                <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search order code / name / mobile…"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="pl-8 pr-4 py-1.5 rounded-full text-gray-800 text-xs outline-none w-56 bg-white"
-                />
-              </div>
-            )}
-            <select
-              value={filterStatus}
-              onChange={(e) => handleFilterStatusChange(e.target.value)}
-              className="px-2.5 py-1.5 rounded-lg text-gray-800 text-xs outline-none bg-white font-semibold min-w-[150px]"
-            >
-              <option value="">All Statuses</option>
-              {STATUS_FILTER_OPTIONS.map(([value, label]) => (
-                <option key={value} value={value}>{label}</option>
-              ))}
-            </select>
-            {!isTailor && (
-              <button
-                onClick={() => setNeedsManualAssignment(!needsManualAssignment)}
-                title="Orders where the tailor broadcast found nobody after every round, including the all-tailor fallback - assign a tailor manually"
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                  needsManualAssignment
-                    ? "bg-rose-600 text-white"
-                    : "bg-white/15 hover:bg-white/25 text-white"
-                }`}
-              >
-                <AlertTriangle size={13} /> Needs Tailor
-              </button>
-            )}
-            {!isTailor && (
-              <button
-                onClick={() => setShowFilters((s) => !s)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold ${
-                  activeFilterCount > 0 ? "bg-white text-teal-700" : "bg-white/15 hover:bg-white/25 text-white"
-                }`}
-              >
-                <SlidersHorizontal size={13} /> Filters
-                {activeFilterCount > 0 && (
-                  <span className="bg-teal-600 text-white rounded-full w-4 h-4 flex items-center justify-center text-[10px]">{activeFilterCount}</span>
-                )}
-              </button>
-            )}
-            <button
-              onClick={() => {
-                // setPage(1) alone is enough when not already on page 1 - it
-                // changes the React Query queryKey, which auto-refetches.
-                // Calling refetch() in the same handler used to race that:
-                // refetch() closes over THIS render's still-stale page value
-                // (React hasn't re-rendered with page=1 yet), so it could
-                // refire the old page's query a moment before/after the
-                // real one - on page 1 already, neither fired anything
-                // different, which read as "Refresh does nothing."
-                if (page !== 1) {
-                  setPage(1);
-                } else {
-                  fetchOrders();
-                }
-              }}
-              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-            >
-              <RefreshCw size={13} /> Refresh
-            </button>
-          </>
-        }
       />
+
+      {/* Moved out of PageHeader's actions slot - that slot is a fixed-height
+          row not meant to hold 5 controls with hardcoded pixel widths
+          (w-56 search box, min-w-[150px] select, ...); on a phone screen
+          those wrapped onto many stacked short rows or forced horizontal
+          overflow. This bar is full-width and every control below sizes
+          itself with flex-1/min-w so it reflows cleanly instead, matching
+          the pattern already used by User Management's UserFilters. */}
+      <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-4 py-3 mb-4 flex flex-wrap items-center gap-2.5">
+        {!isTailor && (
+          <div className="relative flex-1 min-w-[220px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search order code / name / mobile…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-9 pr-8 py-2 rounded-lg text-gray-800 text-sm outline-none border-2 border-gray-200 focus:border-teal-500 bg-gray-50 focus:bg-white transition-colors"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-300 hover:text-gray-500"
+                title="Clear search"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
+        )}
+        <select
+          value={filterStatus}
+          onChange={(e) => handleFilterStatusChange(e.target.value)}
+          className="px-3 py-2 rounded-lg text-gray-700 text-sm outline-none border-2 border-gray-200 focus:border-teal-500 bg-gray-50 focus:bg-white font-semibold transition-colors min-w-[130px]"
+        >
+          <option value="">All Statuses</option>
+          {STATUS_FILTER_OPTIONS.map(([value, label]) => (
+            <option key={value} value={value}>{label}</option>
+          ))}
+        </select>
+        {!isTailor && (
+          <button
+            onClick={() => setNeedsManualAssignment(!needsManualAssignment)}
+            title="Orders where the tailor broadcast found nobody after every round, including the all-tailor fallback - assign a tailor manually"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              needsManualAssignment
+                ? "bg-rose-600 text-white"
+                : "bg-rose-50 hover:bg-rose-100 text-rose-600"
+            }`}
+          >
+            <AlertTriangle size={14} /> Needs Tailor
+          </button>
+        )}
+        {!isTailor && (
+          <button
+            onClick={() => setShowFilters((s) => !s)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+              activeFilterCount > 0 ? "bg-teal-600 text-white" : "bg-teal-50 hover:bg-teal-100 text-teal-700"
+            }`}
+          >
+            <SlidersHorizontal size={14} /> Filters
+            {activeFilterCount > 0 && (
+              <span className="bg-white text-teal-700 rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">{activeFilterCount}</span>
+            )}
+          </button>
+        )}
+        <button
+          onClick={() => {
+            // setPage(1) alone is enough when not already on page 1 - it
+            // changes the React Query queryKey, which auto-refetches.
+            // Calling refetch() in the same handler used to race that:
+            // refetch() closes over THIS render's still-stale page value
+            // (React hasn't re-rendered with page=1 yet), so it could
+            // refire the old page's query a moment before/after the
+            // real one - on page 1 already, neither fired anything
+            // different, which read as "Refresh does nothing."
+            if (page !== 1) {
+              setPage(1);
+            } else {
+              fetchOrders();
+            }
+          }}
+          className="flex items-center gap-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors ml-auto"
+        >
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
 
       {!isTailor && showFilters && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 shadow-sm">
