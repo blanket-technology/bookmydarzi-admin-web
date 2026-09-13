@@ -748,6 +748,19 @@ export default function OrderFullDetailsPage() {
                           <p className="text-sm font-bold text-gray-800 truncate">{it.service_name || "Service"}</p>
                           {it.category_name && <p className="text-xs text-gray-500 truncate">{it.category_name}</p>}
                           {it.person_name && <p className="text-[11px] text-gray-400 mt-0.5">For: {it.person_name}</p>}
+                          {Array.isArray(it.addons) && it.addons.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {it.addons.map((addon, ai) => (
+                                <span
+                                  key={addon.addon_id ?? ai}
+                                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 rounded-md px-1.5 py-0.5"
+                                  title={addon.note || undefined}
+                                >
+                                  + {addon.name} (₹{Number(addon.price).toLocaleString("en-IN")})
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         {it.quantity != null && (
                           <span className="shrink-0 text-xs font-semibold text-gray-600 bg-gray-100 rounded-lg px-2.5 py-1">
