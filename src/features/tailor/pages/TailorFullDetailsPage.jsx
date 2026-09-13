@@ -839,7 +839,7 @@ export default function TailorFullDetailsPage() {
 
               {form.rating != null && (
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-4">
-                  <SectionHeader icon={TrendingUp} title="Rating" subtitle="Admin-set rating shown on the tailor's public profile" />
+                  <SectionHeader icon={TrendingUp} title="Rating" subtitle="Average of customer order ratings - recalculated automatically each time a customer rates or edits a rating" />
                   <StatGrid items={[{ label: "Rating", value: `⭐ ${form.rating}` }]} />
                 </div>
               )}
