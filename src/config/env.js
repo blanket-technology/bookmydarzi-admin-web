@@ -85,3 +85,32 @@ export const BACKEND_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, "").replace(
 
 /** WebSocket base (ws:// or wss://) derived from the API base. */
 export const WS_BASE_URL = API_BASE_URL.replace(/^http/, "ws");
+
+/**
+ * Firebase web config for browser push notifications (admin panel only).
+ * Optional: unlike VITE_API_URL, a missing config does not throw - push is a
+ * progressive-enhancement feature, not a hard app dependency. All of these
+ * values are public by Firebase's own design (they identify the project to
+ * the browser, they are not secrets), so shipping them in the client bundle
+ * is expected and safe.
+ */
+export const FIREBASE_CONFIG = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+/** VAPID key for Web Push, from Firebase console > Cloud Messaging > Web configuration. */
+export const FIREBASE_VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
+
+/** True only when every Firebase config value needed to register for push is present. */
+export const isPushConfigured = Boolean(
+  FIREBASE_CONFIG.apiKey &&
+    FIREBASE_CONFIG.projectId &&
+    FIREBASE_CONFIG.messagingSenderId &&
+    FIREBASE_CONFIG.appId &&
+    FIREBASE_VAPID_KEY
+);

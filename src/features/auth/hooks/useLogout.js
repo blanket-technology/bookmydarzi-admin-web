@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { unregisterPush } from "../../../services/pushService";
 
 export default function useLogout() {
   const [busy, setBusy] = useState(false);
@@ -9,6 +10,7 @@ export default function useLogout() {
     e.preventDefault();
     if (busy) return;
     setBusy(true);
+    unregisterPush();
     setTimeout(() => {
       sessionStorage.removeItem("access_token");
       sessionStorage.removeItem("refresh_token");

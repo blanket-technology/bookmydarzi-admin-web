@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { LogoutPage } from "../../features/auth";
 import { adminWsService } from "../../services/adminWsService";
+import { requestPushPermission } from "../../services/pushService";
 import { getStoredUser, getStoredPermissions } from "../../store/authStore";
 import { MODULES } from "../../constants/permissions";
 import DialogHost from "../common/DialogHost";
@@ -135,6 +136,8 @@ function Layout() {
   useEffect(() => {
     if (!sessionStorage.getItem("access_token")) return;
     adminWsService.connect();
+    // Best-effort: silently no-ops if unconfigured, unsupported, or denied.
+    requestPushPermission();
 
     const onToast = (e) => {
       setWsToast(e.detail);
