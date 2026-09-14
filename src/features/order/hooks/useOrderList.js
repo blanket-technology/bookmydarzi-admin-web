@@ -152,8 +152,8 @@ export default function useOrderList() {
   // (and can't) touch the React Query cache this page actually reads from,
   // so invalidate explicitly here to reflect the status update immediately,
   // same as the WS live-event path above.
-  const confirmCancel = async (reason) => {
-    await storeConfirmCancel(reason);
+  const confirmCancel = async (reason, waivePenalty = false) => {
+    await storeConfirmCancel(reason, waivePenalty);
     queryClient.invalidateQueries({ queryKey: ["orders"] });
   };
 

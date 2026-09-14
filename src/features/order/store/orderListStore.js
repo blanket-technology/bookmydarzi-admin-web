@@ -56,12 +56,12 @@ export const useOrderListStore = create((set, get) => ({
     }
   },
 
-  confirmCancel: async (reason) => {
+  confirmCancel: async (reason, waivePenalty = false) => {
     const { cancelTarget } = get();
     if (!reason || !cancelTarget) return;
     set({ cancelling: true });
     try {
-      await cancelOrder(cancelTarget.Id, reason);
+      await cancelOrder(cancelTarget.Id, reason, waivePenalty);
       set({ cancelTarget: null });
       // Refetching the list is the caller's job now (useOrderList.js wraps
       // this and invalidates the React Query cache the page actually reads

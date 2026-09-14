@@ -8,8 +8,19 @@ export async function getOrdersList({ endpoint, params }) {
   return response.data || {};
 }
 
-export async function cancelOrder(orderId, reason) {
-  const response = await api.patch(`/admin/orders/${orderId}/cancel`, { reason });
+export async function cancelOrder(orderId, reason, waivePenalty = false) {
+  const response = await api.patch(`/admin/orders/${orderId}/cancel`, { reason, waive_penalty: waivePenalty });
+  return response.data;
+}
+
+// Same penalty-aware preview the customer apps show before confirming,
+// bypassing the contact-support stage gate (admin may cancel any
+// non-terminal order) - see cancellation_service.get_cancellation_preview's
+// is_admin/waive_penalty params.
+export async function getAdminCancellationPreview(orderId, waivePenalty = false) {
+  const response = await api.get(`/admin/orders/${orderId}/cancellation-preview`, {
+    params: { waive_penalty: waivePenalty },
+  });
   return response.data;
 }
 

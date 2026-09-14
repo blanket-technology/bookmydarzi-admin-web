@@ -29,6 +29,8 @@ import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js
 import { ROLES } from "../../../constants/permissions.js";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { notifyError } from "../../../services/dialogService";
+import CancelOrderModal from "../components/CancelOrderModal.jsx";
+import { cancelOrder as cancelOrderRequest } from "../services/orderService.js";
 import {
   getOrderActions,
   runOrderAction,
@@ -602,8 +604,17 @@ export default function OrderFullDetailsPage() {
   const isTailor = currentRole === ROLES.TAILOR;
   const [pendingAction, setPendingAction] = useState(null); // action needing input/reason
   const [actionInput, setActionInput] = useState({});
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const executeAction = (action, input = {}) => {
+    // Cancel gets its own dedicated modal (penalty/refund preview + admin
+    // waiver checkbox, same as the orders-list cancel flow) instead of the
+    // generic reason-textarea dialog every other action here uses - see
+    // CancelOrderModal.jsx.
+    if (action.id === "cancel_order") {
+      setShowCancelModal(true);
+      return;
+    }
     if (action.requiresReason && !input.__confirmed) {
       setActionInput({});
       setPendingAction(action);
@@ -1473,6 +1484,27 @@ export default function OrderFullDetailsPage() {
           </div>
         </div>
       </div>
+
+      {showCancelModal && (
+        <CancelOrderModal
+          order={order}
+          submitting={actionLoading}
+          onClose={() => setShowCancelModal(false)}
+          onConfirm={async (reason, waivePenalty) => {
+            setActionLoading(true);
+            setMsg(null);
+            try {
+              await cancelOrderRequest(order.Id, reason, waivePenalty);
+              setShowCancelModal(false);
+              await refresh();
+            } catch (err) {
+              notifyError(extractErrorMessage(err, "Failed to cancel order."));
+            } finally {
+              setActionLoading(false);
+            }
+          }}
+        />
+      )}
 
       {/* Action input modal - for actions requiring structured input (schedule pickup, collect payment, assign tailor) */}
       {pendingAction && (
