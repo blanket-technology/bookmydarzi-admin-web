@@ -1,9 +1,12 @@
 import {
-  MapPin, Plus, Pencil, Loader2, RefreshCw, CheckCircle2, XCircle, Trash2,
+  MapPin, Plus, Pencil, Loader2, RefreshCw, CheckCircle2, XCircle, Trash2, Bell,
 } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader.jsx";
+import Pagination from "../../../components/common/Pagination";
+import { formatDate } from "../../../utils/formatters";
 import AreaModal from "../components/AreaModal.jsx";
 import useServiceAreas from "../hooks/useServiceAreas.js";
+import useServiceAreaInterests from "../hooks/useServiceAreaInterests.js";
 
 export default function ServiceAreasPage() {
   const {
@@ -26,6 +29,17 @@ export default function ServiceAreasPage() {
     handleDelete,
     fetchAreas,
   } = useServiceAreas();
+
+  const {
+    items: interests,
+    total: interestsTotal,
+    page: interestsPage,
+    limit: interestsLimit,
+    loading: interestsLoading,
+    error: interestsError,
+    setPage: setInterestsPage,
+    fetchInterests,
+  } = useServiceAreaInterests();
 
   return (
     <>
@@ -124,6 +138,77 @@ export default function ServiceAreasPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bell size={14} className="text-teal-600" />
+              <h2 className="font-semibold text-gray-800 text-sm">Interest Leads</h2>
+              <span className="text-xs text-gray-400">
+                Customers who asked to be notified when we launch in their area
+              </span>
+            </div>
+            <button onClick={fetchInterests} className="flex items-center gap-1.5 text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-1.5 rounded-lg text-xs font-semibold">
+              <RefreshCw size={12} /> Refresh
+            </button>
+          </div>
+
+          {interestsError && (
+            <div className="bg-red-50 border-b border-red-200 text-red-700 px-4 py-3 text-sm">{interestsError}</div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead className="bg-gray-50 text-gray-500">
+                <tr>
+                  <th className="px-4 py-2.5 text-left font-semibold">Customer</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">City / Pincode</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Coordinates</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Address</th>
+                  <th className="px-4 py-2.5 text-left font-semibold">Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {interestsLoading ? (
+                  <tr><td colSpan={5} className="text-center py-10"><Loader2 className="animate-spin mx-auto text-teal-600" size={24} /></td></tr>
+                ) : interests.length === 0 ? (
+                  <tr><td colSpan={5} className="text-center py-10 text-gray-500 font-medium">
+                    No interest leads yet.
+                  </td></tr>
+                ) : (
+                  interests.map((i) => (
+                    <tr key={i.id} className="hover:bg-gray-50 transition-colors text-gray-700">
+                      <td className="px-4 py-2.5">
+                        <div className="font-semibold">{i.customer_name || "-"}</div>
+                        {i.customer_mobile && <div className="text-gray-400">{i.customer_mobile}</div>}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-500">
+                        {[i.city, i.pincode].filter(Boolean).join(" · ") || "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-500 font-mono">
+                        {i.latitude != null && i.longitude != null
+                          ? `${i.latitude.toFixed(5)}, ${i.longitude.toFixed(5)}`
+                          : "-"}
+                      </td>
+                      <td className="px-4 py-2.5 text-gray-500 max-w-[220px] truncate">{i.address_text || "-"}</td>
+                      <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{formatDate(i.created_at)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {!interestsLoading && interestsTotal > 0 && (
+            <Pagination
+              page={interestsPage}
+              total={interestsTotal}
+              limit={interestsLimit}
+              onPageChange={setInterestsPage}
+              onLimitChange={() => {}}
+            />
+          )}
         </div>
       </div>
     </>
