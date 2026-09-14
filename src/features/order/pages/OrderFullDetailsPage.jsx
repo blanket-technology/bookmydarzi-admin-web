@@ -104,6 +104,51 @@ function Fact({ label, value, emphasis = false }) {
   );
 }
 
+// Same serviceability check already enforced server-side at order placement
+// (assert_serviceable_for_address in serviceability_service.py) - this is a
+// staff-visibility signal, not a new gate. Calls the existing public
+// /location/check-serviceability endpoint client-side (same one
+// AddressLocationField.tsx uses on the customer-facing address form) rather
+// than adding a new backend field, since this order-detail page's address
+// object already carries latitude/longitude from AddressResponseSchema.
+// Defense-in-depth only: catches service-area config drift after this order
+// was placed, or an address right at the edge, before staff accept/dispatch.
+function ServiceabilityBadge({ address }) {
+  const [result, setResult] = useState(null);
+  const lat = address?.latitude ?? address?.Latitude;
+  const lng = address?.longitude ?? address?.Longitude;
+
+  useEffect(() => {
+    if (lat == null || lng == null) {
+      setResult(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get(`/location/check-serviceability?latitude=${lat}&longitude=${lng}`)
+      .then((res) => {
+        if (!cancelled) setResult(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setResult(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [lat, lng]);
+
+  if (!result || result.distance_km == null) return null;
+
+  return result.serviceable ? (
+    <p className="text-xs text-gray-400">{result.distance_km} km from nearest hub</p>
+  ) : (
+    <div className="flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-xs font-semibold text-amber-800">
+      <AlertTriangle size={13} className="shrink-0" />
+      {result.distance_km} km from nearest hub — outside the configured service area
+    </div>
+  );
+}
+
 // Canonical fulfillment journey - the granular backend statuses are grouped
 // into the handful of milestones an ops person tracks. `match` lists every
 // raw status that maps to this step (so the stepper lights up correctly no
@@ -1346,6 +1391,7 @@ export default function OrderFullDetailsPage() {
                     </div>
                   );
                 })()}
+                <ServiceabilityBadge address={order.address} />
               </div>
             </SectionCard>
 
