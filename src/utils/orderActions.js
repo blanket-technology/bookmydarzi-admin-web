@@ -41,6 +41,10 @@ export const ORDER_STATUS = {
   DELIVERED: "delivered",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
+  RETURN_PENDING: "return_pending",
+  RETURN_SCHEDULED: "return_scheduled",
+  RETURN_IN_TRANSIT: "return_in_transit",
+  RETURNED: "returned",
 };
 
 export const STATUS_LABELS = {
@@ -64,9 +68,18 @@ export const STATUS_LABELS = {
   delivered: "Delivered",
   completed: "Completed",
   cancelled: "Cancelled",
+  return_pending: "Return Pending",
+  return_scheduled: "Return Scheduled",
+  return_in_transit: "Return In Transit",
+  returned: "Returned",
 };
 
-export const TERMINAL_STATUSES = new Set(["completed", "cancelled", "order_rejected"]);
+// "cancelled" is intentionally NOT terminal here anymore: an order cancelled
+// after the tailor already had custody continues into the return_pending/...
+// sequence, so the cancel action (and its UI affordances) must still be
+// hideable/considered done at that point, but the order itself isn't fully
+// finished until "returned". Only truly-final states are listed.
+export const TERMINAL_STATUSES = new Set(["completed", "cancelled", "order_rejected", "returned"]);
 
 const ROLE = {
   ADMIN: "admin",
