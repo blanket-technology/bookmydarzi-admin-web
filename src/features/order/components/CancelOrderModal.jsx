@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Trash2, Loader2, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters.js";
 import { extractErrorMessage } from "../../../utils/formatters.js";
-import { getAdminCancellationPreview } from "../services/orderService.js";
+import { getAdminCancellationPreview, getOrderCancellationRecord } from "../services/orderService.js";
 
 // Admin cancel now routes through the same penalty-aware engine the
 // customer apps use (see cancellation_service.admin_cancel_order) instead of
@@ -20,6 +20,24 @@ export default function CancelOrderModal({ order, onClose, onConfirm, submitting
   const loadingPreview = previewResult.for !== waivePenalty;
   const preview = loadingPreview ? null : previewResult.data;
   const previewError = loadingPreview ? "" : previewResult.error;
+
+  // Existing customer-initiated cancellation request for this order, if
+  // any - shown so an admin doesn't confirm this separate, independent
+  // cancel action without seeing one already sitting in the Cancellations
+  // review queue. Best-effort: a failure here just means no banner, never
+  // blocks the actual cancel flow.
+  const [existingCancellation, setExistingCancellation] = useState(null);
+  useEffect(() => {
+    let cancelled = false;
+    getOrderCancellationRecord(order.Id)
+      .then((record) => {
+        if (!cancelled) setExistingCancellation(record || null);
+      })
+      .catch(() => {
+        if (!cancelled) setExistingCancellation(null);
+      });
+    return () => { cancelled = true; };
+  }, [order.Id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,6 +69,17 @@ export default function CancelOrderModal({ order, onClose, onConfirm, submitting
             <p className="text-xs text-gray-500 mt-0.5 truncate">{order.OrderCode || `#${order.Id}`}</p>
           </div>
         </div>
+
+        {existingCancellation && ["pending", "approved"].includes(existingCancellation.Status) && (
+          <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2.5 rounded-xl mb-4 text-xs font-semibold">
+            <AlertTriangle size={14} className="text-amber-600 shrink-0 mt-0.5" />
+            <span>
+              A customer cancellation request ({existingCancellation.CancellationCode ?? `#${existingCancellation.Id}`}
+              ) is already {existingCancellation.Status} in the Cancellations queue. This will start a separate,
+              independent cancellation.
+            </span>
+          </div>
+        )}
 
         {loadingPreview ? (
           <div className="flex items-center justify-center py-6 text-gray-400 text-sm gap-2 mb-4">

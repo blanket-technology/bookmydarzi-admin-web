@@ -33,9 +33,8 @@ import { ReportingPage } from "../../features/reporting/index.js";
 import { UsersPage, UserDetailPage } from "../../features/users/index.js";
 import { SettingsPage } from "../../features/settings/index.js";
 import { ProfilePage } from "../../features/profile/index.js";
-import { FAQsPage, SupportPage as InboxPage, SupportTicketsPage } from "../../features/support/index.js";
+import { SupportPage as InboxPage } from "../../features/support/index.js";
 import { CMSPage } from "../../features/cms/index.js";
-import { ChatSupportPage } from "../../features/chat/index.js";
 import { CancellationsPage } from "../../features/cancellations/index.js";
 import { LeaveRequestsPage } from "../../features/leave/index.js";
 import { NotificationsPage } from "../../features/notifications/index.js";
@@ -77,11 +76,8 @@ export default function AppRouter() {
             <Route path="/reporting" element={<ReportingPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/faqs" element={<FAQsPage />} />
-            <Route path="/support-tickets" element={<SupportTicketsPage />} />
             <Route path="/support" element={<InboxPage />} />
             <Route path="/cms" element={<CMSPage />} />
-            <Route path="/chat-support" element={<ChatSupportPage />} />
             <Route path="/cancellations" element={<CancellationsPage />} />
             <Route path="/leave-requests" element={<LeaveRequestsPage />} />
             <Route path="/service-areas" element={<ServiceAreasPage />} />

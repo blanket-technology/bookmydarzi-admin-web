@@ -29,6 +29,16 @@ export async function getOrderById(orderId) {
   return response.data;
 }
 
+// Existing cancellation record for this order (customer-initiated request
+// still pending/approved/rejected/refunded), or null if none - lets the
+// order-detail page warn before an admin uses the separate unified Cancel
+// Order action, which would otherwise create a second, conflicting
+// cancellation with no visibility into one already in the review queue.
+export async function getOrderCancellationRecord(orderId) {
+  const response = await api.get(`/admin/orders/${orderId}/cancellation`);
+  return response.data;
+}
+
 export async function getTailorsForFilter(role) {
   const endpoint = role === ROLES.EMPLOYEE ? "/employee/tailors" : "/admin/tailors";
   const response = await api.get(endpoint);

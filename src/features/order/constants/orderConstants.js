@@ -35,6 +35,10 @@ export const STATUS_THEME = {
   broadcasted: { bg: "bg-sky-50", text: "text-sky-800", dot: "bg-sky-600", accent: "border-sky-500" },
   pending_payment: { bg: "bg-gray-100", text: "text-gray-600", dot: "bg-gray-400", accent: "border-gray-300" },
   payment_failed: { bg: "bg-rose-50", text: "text-rose-700", dot: "bg-rose-500", accent: "border-rose-400" },
+  return_pending: { bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500", accent: "border-amber-400" },
+  return_scheduled: { bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500", accent: "border-blue-400" },
+  return_in_transit: { bg: "bg-indigo-50", text: "text-indigo-700", dot: "bg-indigo-500", accent: "border-indigo-400" },
+  returned: { bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500", accent: "border-emerald-400" },
 };
 
 export const DEFAULT_THEME = {

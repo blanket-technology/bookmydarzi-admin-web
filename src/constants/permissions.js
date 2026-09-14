@@ -260,11 +260,6 @@ export const ROUTE_PERMISSION_MAP = {
   "/leave-requests": MODULES.LEAVE_REQUESTS,
   "/service-areas": MODULES.SERVICE_AREAS,
   "/support": MODULES.SUPPORT_TICKETS, // merged tickets+chat - gated same as the ticketing module it absorbed
-  // Kept registered (routes still exist in App.jsx for any stale deep
-  // links) even though Layout.jsx no longer links to them directly.
-  "/chat-support": MODULES.CHAT_SUPPORT,
-  "/faqs": MODULES.SUPPORT_FAQS,
-  "/support-tickets": MODULES.SUPPORT_TICKETS,
   "/inventory": MODULES.INVENTORY,
   "/deliveries": MODULES.FLEET_TRACKING,
   "/pickups": MODULES.FLEET_TRACKING,
