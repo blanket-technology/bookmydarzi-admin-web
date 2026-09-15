@@ -29,5 +29,5 @@ export const PAYMENT_FILTER_OPTIONS = [
 ];
 
 export const TABLE_HEADERS = [
-  "Code", "Order", "Customer", "Type", "Paid", "Refund", "Stage", "Status", "Created", "",
+  "S.No.", "Code", "Order", "Customer", "Type", "Paid", "Refund", "Stage", "Status", "Created", "",
 ];

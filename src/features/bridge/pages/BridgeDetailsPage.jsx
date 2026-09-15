@@ -82,6 +82,7 @@ export default function BridgeDetailsPage() {
           loading={loading}
           emptyMessage={search || filterActive ? "No matching employees." : "No bridge employees found."}
           pagination={{ page, total: filtered.length, limit, onPageChange: setPage, onLimitChange: (l) => { setLimit(l); setPage(1); } }}
+          showSerialNumber
           renderRow={(s) => (
             <tr
               key={s.id}

@@ -1,3 +1,5 @@
+import { useState } from "react";
+
 const inp =
   "w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-sm outline-none " +
   "focus:border-teal-500 bg-gray-50 focus:bg-white transition-colors placeholder:text-gray-400";
@@ -27,8 +29,51 @@ function Field({ label, required, children, error }) {
  *   onChange fn(newValue)
  *   errors   {{ city?, location?, sector?, pincode?, latitude?, longitude? }}
  */
+// India Post's official pincode lookup - free, no API key, no rate-limit
+// documented for reasonable use. Used only to auto-fill City/Location once
+// a full 6-digit pincode is entered - the admin can still freely edit
+// whatever it fills in, this just removes the manual lookup step for the
+// common case.
+async function lookupPincode(pincode) {
+  const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
+  if (!res.ok) return null;
+  const data = await res.json();
+  const record = data?.[0];
+  if (record?.Status !== "Success" || !record.PostOffice?.length) return null;
+  const po = record.PostOffice[0];
+  return { city: po.District, location: po.Name };
+}
+
 export default function AddressForm({ value = {}, onChange, errors = {} }) {
+  const [pincodeLookup, setPincodeLookup] = useState({ status: "idle", pincode: null });
   const set = (k, v) => onChange({ ...value, [k]: v });
+
+  const handlePincodeChange = (raw) => {
+    const digitsOnly = raw.replace(/\D/g, "").slice(0, 6);
+    set("pincode", digitsOnly);
+    setPincodeLookup({ status: "idle", pincode: null });
+
+    if (digitsOnly.length !== 6) return;
+
+    setPincodeLookup({ status: "loading", pincode: digitsOnly });
+    lookupPincode(digitsOnly)
+      .then((result) => {
+        setPincodeLookup({ status: result ? "success" : "not_found", pincode: digitsOnly });
+        if (result) {
+          // Never overwrite a City/Location the admin has already typed -
+          // this only fills genuinely empty fields, so a manual correction
+          // (e.g. a more specific locality than the pincode's default post
+          // office name) is never silently clobbered by a later re-lookup.
+          onChange({
+            ...value,
+            pincode: digitsOnly,
+            city: value.city || result.city,
+            location: value.location || result.location,
+          });
+        }
+      })
+      .catch(() => setPincodeLookup({ status: "not_found", pincode: digitsOnly }));
+  };
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -66,8 +111,15 @@ export default function AddressForm({ value = {}, onChange, errors = {} }) {
           maxLength={6}
           inputMode="numeric"
           value={value.pincode || ""}
-          onChange={(e) => set("pincode", e.target.value.replace(/\D/g, ""))}
+          onChange={(e) => handlePincodeChange(e.target.value)}
         />
+        {pincodeLookup.pincode === value.pincode && (
+          <p className={`text-xs mt-1 ${pincodeLookup.status === "not_found" ? "text-amber-600" : "text-gray-400"}`}>
+            {pincodeLookup.status === "loading" && "Looking up area…"}
+            {pincodeLookup.status === "success" && "City/Location auto-filled from pincode"}
+            {pincodeLookup.status === "not_found" && "Pincode not found - enter City/Location manually"}
+          </p>
+        )}
       </Field>
 
       <Field label="Latitude" error={errors.latitude}>

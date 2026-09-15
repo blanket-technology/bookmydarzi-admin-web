@@ -15,6 +15,7 @@ export const useTailorApplicationsStore = create((set, get) => ({
   loading: true,
   error: "",
   search: "",
+  debouncedSearch: "",
   status: "",
   page: DEFAULT_PAGE,
   limit: DEFAULT_LIMIT,
@@ -31,6 +32,7 @@ export const useTailorApplicationsStore = create((set, get) => ({
   panWaiverReason: "",
 
   setSearch: (search) => set({ search }),
+  setDebouncedSearch: (debouncedSearch) => set({ debouncedSearch, page: DEFAULT_PAGE }),
   setStatus: (status) => set({ status, page: DEFAULT_PAGE }),
   setPage: (page) => set({ page }),
   setLimit: (limit) => set({ limit, page: DEFAULT_PAGE }),
@@ -42,10 +44,10 @@ export const useTailorApplicationsStore = create((set, get) => ({
   setPanWaiverReason: (panWaiverReason) => set({ panWaiverReason }),
 
   fetchApplications: async () => {
-    const { page, limit, search, status } = get();
+    const { page, limit, debouncedSearch, status } = get();
     set({ loading: true, error: "" });
     try {
-      const data = await getApplications(buildApplicationListParams({ page, limit, search, status }));
+      const data = await getApplications(buildApplicationListParams({ page, limit, search: debouncedSearch, status }));
       set({
         applications: data.items || [],
         total: data.total || 0,

@@ -15,7 +15,11 @@ export function fmtDate(d) {
 }
 
 export function buildCancellationParams({ page, pageSize, statusFilter, paymentFilter }) {
-  const params = new URLSearchParams({ skip: page * pageSize, limit: pageSize });
+  // `page` is 1-based (matches every other list screen); the backend's
+  // cancellations endpoint is offset-based (skip/limit) - convert here, at
+  // the API boundary, rather than keeping 0-based page state throughout
+  // the store/UI just to match this one endpoint's shape.
+  const params = new URLSearchParams({ skip: (page - 1) * pageSize, limit: pageSize });
   if (statusFilter) params.set("status", statusFilter);
   if (paymentFilter) params.set("payment_type", paymentFilter);
   return params;

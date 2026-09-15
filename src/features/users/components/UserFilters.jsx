@@ -1,5 +1,6 @@
 import { Search, RefreshCw, X } from "lucide-react";
-import { ROLE_OPTIONS, STATUS_OPTIONS } from "../constants/userConstants.js";
+import { getRoleOptionsForViewer, STATUS_OPTIONS } from "../constants/userConstants.js";
+import { getStoredUser } from "../../auth/store/authStore.js";
 
 export default function UserFilters({
   search,
@@ -10,6 +11,7 @@ export default function UserFilters({
   onStatusChange,
   onRefresh,
 }) {
+  const roleOptions = getRoleOptionsForViewer(getStoredUser()?.Role);
   const hasActiveFilters = Boolean(search || roleFilter || statusFilter);
 
   return (
@@ -39,7 +41,7 @@ export default function UserFilters({
         onChange={(e) => onRoleChange(e.target.value)}
         className="px-3 py-2 rounded-lg text-gray-700 text-sm outline-none border-2 border-gray-200 focus:border-teal-500 bg-gray-50 focus:bg-white font-semibold transition-colors min-w-[130px]"
       >
-        {ROLE_OPTIONS.map((r) => (
+        {roleOptions.map((r) => (
           <option key={r.value} value={r.value}>{r.label}</option>
         ))}
       </select>

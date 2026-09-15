@@ -7,6 +7,7 @@ import StatusBadge from "../../../components/common/StatusBadge";
 import StatCard from "../../bridge/components/StatCard.jsx";
 import api from "../../../services/api";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../../utils/formatters";
+import { useDebouncedValue } from "../../../hooks/useDebouncedValue.js";
 
 // Shared shell for the two fleet-wide admin views mobile had and web
 // didn't: "Deliveries" (out_for_delivery, keyed on DeliveryEmployeeId) and
@@ -29,6 +30,10 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
 
+  // Debounced - previously `search` went straight into fetchOrders' deps,
+  // firing a full /admin/orders request on every single keystroke.
+  const debouncedSearch = useDebouncedValue(search);
+
   // employeeField is the frontend order object's own field name
   // ("AssignedEmployeeId" for Pickups, "DeliveryEmployeeId" for Deliveries)
   // - maps to the matching backend unassigned_field query param value.
@@ -43,7 +48,7 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
           status: statuses.join(","),
           page,
           limit,
-          ...(search.trim() ? { search: search.trim() } : {}),
+          ...(debouncedSearch.trim() ? { search: debouncedSearch.trim() } : {}),
         },
       });
       setOrders(res.data.orders || []);
@@ -53,7 +58,7 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
     } finally {
       setLoading(false);
     }
-  }, [statuses, page, limit, search]);
+  }, [statuses, page, limit, debouncedSearch]);
 
   // A fleet-wide count, not "how many on THIS page have no employee" - the
   // previous version derived this from the paginated `orders` array, so a
@@ -122,6 +127,7 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
         loading={loading}
         emptyMessage={search ? "No matching orders." : emptyLabel}
         pagination={{ page, total, limit, onPageChange: setPage, onLimitChange: (l) => { setLimit(l); setPage(1); } }}
+        showSerialNumber
         renderRow={(o) => (
           <tr
             key={o.Id}

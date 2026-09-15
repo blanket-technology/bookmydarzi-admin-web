@@ -64,7 +64,16 @@ function SidebarContent({ isCollapsed, navItems, location, setIsMobileOpen, admi
         <div className="space-y-0.5">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+            // Exact match, or one of this item's own detail/sub-route
+            // prefixes (e.g. Tailors' nav path is /tailordetails, but its
+            // detail page lives at /tailors/:id - an unrelated path, not a
+            // prefix of the nav item's own path). Without matchPrefixes, no
+            // sidebar item highlights at all while on any detail/sub-page.
+            const isActive =
+              location.pathname === item.path ||
+              (item.matchPrefixes ?? []).some(
+                (prefix) => location.pathname === prefix || location.pathname.startsWith(`${prefix}/`),
+              );
 
             return (
               <Link
@@ -170,11 +179,11 @@ function Layout() {
 
   const allNavItems = [
     { name: "Dashboard", path: "/dashboard", icon: BarChart2, module: MODULES.DASHBOARD },
-    { name: "User Management", path: "/users", icon: Users, module: MODULES.USERS },
-    { name: "Tailors", path: "/tailordetails", icon: Scissors, module: MODULES.TAILORS },
+    { name: "User Management", path: "/users", icon: Users, module: MODULES.USERS, matchPrefixes: ["/customers"] },
+    { name: "Tailors", path: "/tailordetails", icon: Scissors, module: MODULES.TAILORS, matchPrefixes: ["/tailors", "/addtailor"] },
     { name: "Tailor Applications", path: "/tailor-applications", icon: ClipboardList, module: MODULES.TAILORS },
-    { name: "Bridge", path: "/bridgedetail", icon: Bike, module: MODULES.EMPLOYEES },
-    { name: "Order Management", path: "/ordersdetails", icon: ShoppingCart, module: MODULES.ORDERS },
+    { name: "Bridge", path: "/bridgedetail", icon: Bike, module: MODULES.EMPLOYEES, matchPrefixes: ["/employees", "/employee-order-workflow", "/addbridge"] },
+    { name: "Order Management", path: "/ordersdetails", icon: ShoppingCart, module: MODULES.ORDERS, matchPrefixes: ["/orders", "/addorder"] },
     { name: "Cancellations", path: "/cancellations", icon: XCircle, module: MODULES.CANCELLATIONS },
     { name: "Deliveries", path: "/deliveries", icon: Truck, module: MODULES.FLEET_TRACKING },
     { name: "Pickups", path: "/pickups", icon: PackageCheck, module: MODULES.FLEET_TRACKING },

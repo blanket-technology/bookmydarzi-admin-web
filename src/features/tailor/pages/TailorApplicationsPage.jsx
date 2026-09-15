@@ -210,7 +210,15 @@ const TailorApplicationsPage = () => {
 
             {!detailLoading && detailApp.status?.toLowerCase() === "pending" && (
               <div className="flex gap-3 p-5 border-t">
-                {detailApp.pan_card_url || isSuperadmin ? (
+                {/* Aadhaar has no waiver path (unlike PAN below) - basic
+                    identity verification, not a narrow tax-reporting
+                    concern - so it's a hard block here mirroring the
+                    backend's unconditional check in application_service.py. */}
+                {!detailApp.aadhaar_front_url || !detailApp.aadhaar_back_url ? (
+                  <div className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-400 py-2.5 rounded-xl text-sm font-semibold text-center px-2">
+                    Aadhaar (front & back) required before approval
+                  </div>
+                ) : detailApp.pan_card_url || isSuperadmin ? (
                   <button
                     onClick={() => {
                       const app = detailApp;
@@ -413,6 +421,7 @@ const TailorApplicationsPage = () => {
           <table className="w-full text-xs">
             <thead className="bg-brand text-white">
               <tr>
+                <th className="px-4 py-2.5 text-center font-semibold">S.No.</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Application #</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Name</th>
                 <th className="px-4 py-2.5 text-left font-semibold">Email</th>
@@ -427,7 +436,7 @@ const TailorApplicationsPage = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="text-center py-10">
+                  <td colSpan={10} className="text-center py-10">
                     <Loader2
                       className="animate-spin mx-auto text-teal-600"
                       size={24}
@@ -435,8 +444,9 @@ const TailorApplicationsPage = () => {
                   </td>
                 </tr>
               ) : applications.length > 0 ? (
-                applications.map((app) => (
+                applications.map((app, i) => (
                   <tr key={app.id} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-2.5 text-center text-gray-400 font-mono text-[11px]">{(page - 1) * limit + i + 1}</td>
                     <td className="px-4 py-2.5 font-mono font-semibold text-teal-700 whitespace-nowrap">
                       {app.application_number || app.id}
                     </td>
@@ -459,25 +469,19 @@ const TailorApplicationsPage = () => {
                         >
                           <Eye size={13} /> View
                         </button>
+                        {/* Approve/Reject only from the detail modal now -
+                            this list row has no document URLs to gate on
+                            (TailorApplicationListItem doesn't include them),
+                            and a one-click Approve here let staff approve an
+                            application without ever opening it to see
+                            whether Aadhaar/PAN were actually on file. */}
                         {app.status?.toLowerCase() === "pending" && (
-                          <>
-                            <button
-                              onClick={() => handleApprove(app.id)}
-                              disabled={actionLoading === app.id}
-                              className="flex items-center gap-1 bg-green-600 hover:bg-green-700 disabled:bg-green-300 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                            >
-                              <CheckCircle2 size={13} />
-                              {actionLoading === app.id
-                                ? "Approving…"
-                                : "Approve"}
-                            </button>
-                            <button
-                              onClick={() => openRejectModal(app)}
-                              className="flex items-center gap-1 bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded-lg text-xs font-semibold"
-                            >
-                              <XCircle size={13} /> Reject
-                            </button>
-                          </>
+                          <button
+                            onClick={() => openDetail(app)}
+                            className="flex items-center gap-1 bg-teal-50 hover:bg-teal-100 text-teal-700 px-3 py-1.5 rounded-lg text-xs font-semibold"
+                          >
+                            Review
+                          </button>
                         )}
                         {app.status?.toLowerCase() !== "pending" && (
                           <span className="text-xs text-gray-400 italic">
@@ -490,7 +494,7 @@ const TailorApplicationsPage = () => {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={9} className="text-center py-10 text-gray-500">
+                  <td colSpan={10} className="text-center py-10 text-gray-500">
                     No applications found
                   </td>
                 </tr>

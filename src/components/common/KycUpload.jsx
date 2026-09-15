@@ -1,8 +1,27 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   FileText, CloudUpload, FileUp, Eye, CheckCircle2, Trash2, X,
 } from "lucide-react";
 import { resolveMediaUrl } from "../../services/api";
+
+// Mirrors the backend's actual limits (app/services/staff/kyc_self_service.py's
+// MAX_KYC_FILE_SIZE and its magic-byte type check) - catching an oversized or
+// wrong-type file here avoids a full upload round-trip just to get rejected.
+// This is a UX convenience, not the real security boundary: the backend
+// independently re-validates both by inspecting actual file content, not
+// just what the browser reports here (which a user can spoof).
+const MAX_KYC_FILE_BYTES = 8 * 1024 * 1024;
+const ACCEPTED_KYC_TYPES = ["image/jpeg", "image/png", "application/pdf"];
+
+function validateKycFile(file) {
+  if (file.size > MAX_KYC_FILE_BYTES) {
+    return `File is ${(file.size / 1024 / 1024).toFixed(1)} MB - max size is 8 MB.`;
+  }
+  if (file.type && !ACCEPTED_KYC_TYPES.includes(file.type)) {
+    return "Only JPG, PNG, or PDF files are accepted.";
+  }
+  return null;
+}
 
 // Shared KYC document card + viewer, extracted from Tailor/TailorFullDetails.jsx
 // so any entity type with document upload (Tailor, Bridge/employee) renders
@@ -10,6 +29,7 @@ import { resolveMediaUrl } from "../../services/api";
 
 export function KycCard({ label, icon: DocIcon, docKey, pendingFile, existingUrl, onPickFile, onView, onClearPending, onDelete, uploading, editMode }) {
   const ref = useRef(null);
+  const [fileError, setFileError] = useState("");
   const hasPending  = !!pendingFile;
   const hasExisting = !!existingUrl;
   const has = hasPending || hasExisting;
@@ -79,9 +99,24 @@ export function KycCard({ label, icon: DocIcon, docKey, pendingFile, existingUrl
           </div>
         )}
 
+        {fileError && (
+          <p className="text-xs text-red-600 font-semibold -mt-1">{fileError}</p>
+        )}
+
         <div className="flex items-center gap-2">
           <input ref={ref} type="file" accept=".jpg,.jpeg,.png,.pdf" className="hidden"
-            onChange={(e) => { if (e.target.files[0]) onPickFile(docKey, e.target.files[0]); e.target.value = ""; }} />
+            onChange={(e) => {
+              const file = e.target.files[0];
+              e.target.value = "";
+              if (!file) return;
+              const error = validateKycFile(file);
+              if (error) {
+                setFileError(error);
+                return;
+              }
+              setFileError("");
+              onPickFile(docKey, file);
+            }} />
 
           <button type="button" onClick={() => ref.current.click()} disabled={!editMode || uploading}
             className={`flex-1 h-9 flex items-center justify-center gap-2 rounded-xl text-xs font-bold border-2 transition-all

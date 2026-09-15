@@ -43,6 +43,13 @@ export default function AdminLoginPage() {
       <div className="w-full max-w-4xl bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col md:flex-row">
 
         <div className="w-full md:w-1/2 p-8 sm:p-12 flex flex-col justify-center">
+          {/* Mobile-only logo - the desktop side panel below (hidden on
+              mobile) previously left mobile with no logo anywhere on this
+              screen at all. */}
+          <div className="flex md:hidden justify-center mb-6">
+            <img src={logoImage} alt="BookMyDarzi" className="h-14 object-contain" />
+          </div>
+
           {otpStage ? (
             <form ref={formRef} onSubmit={handleVerifyOtp} className="space-y-5">
               <div>
@@ -201,6 +208,12 @@ export default function AdminLoginPage() {
               >
                 {loading ? "Signing in…" : "Sign in"}
               </button>
+
+              <p className="text-center text-xs text-slate-400 leading-relaxed">
+                This panel is for authorized BookMyDarzi staff use only.
+                By signing in, you agree to use it in accordance with company
+                policy - all actions are logged and audited.
+              </p>
             </form>
           )}
         </div>
