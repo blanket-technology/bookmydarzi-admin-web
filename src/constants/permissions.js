@@ -135,7 +135,12 @@ const TAILOR_PERMISSIONS = {
   ...ALL_FALSE,
   dashboard: true,
   orders: true, // scoped to own orders - see ORDER_SCOPE
-  payments: true, // read-only, own orders - see PAYMENT_SCOPE
+  // Tailors must not see customer payment/price/refund detail - backend
+  // (payment_service.py's get_payment_by_order) already denies TAILOR
+  // outright (ADMIN_STAFF_ROLES excludes TAILOR, and a tailor is never the
+  // order's CustomerId), so the old "own" PAYMENT_SCOPE here was dead/
+  // unreachable in practice; hiding the module matches actual backend access.
+  payments: false,
   notifications: true,
   myAccount: true,
 };
@@ -162,7 +167,9 @@ export const PAYMENT_SCOPE = {
   [ROLES.SUPERADMIN]: "all",
   [ROLES.ADMIN]: "all",
   [ROLES.EMPLOYEE]: "assigned",
-  [ROLES.TAILOR]: "own",
+  // Tailor has no payment scope - the payments module is hidden for this
+  // role entirely (TAILOR_PERMISSIONS.payments = false); backend denies
+  // tailor payment access outright regardless.
 };
 
 /** Whether a role can perform mutating payment actions (refund / status override), vs. view only. */

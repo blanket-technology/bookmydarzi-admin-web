@@ -291,9 +291,13 @@ export default function OrderDetailsPage() {
                       {order.OrderCode || order.OrderNumber || `#${order.Id}`}
                     </td>
                     <td className="px-4 py-3 max-w-[160px]">
-                      <div className="font-semibold text-gray-800 truncate">{order.address?.full_name || "-"}</div>
-                      {order.address?.mobile && (
-                        <div className="text-gray-400 text-xs">{order.address.mobile}</div>
+                      {!isTailor && (
+                        <>
+                          <div className="font-semibold text-gray-800 truncate">{order.address?.full_name || "-"}</div>
+                          {order.address?.mobile && (
+                            <div className="text-gray-400 text-xs">{order.address.mobile}</div>
+                          )}
+                        </>
                       )}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -307,7 +311,7 @@ export default function OrderDetailsPage() {
                       {order.UrgencyLevel && order.UrgencyLevel.toLowerCase() !== "standard" && (
                         <div className="text-[10px] uppercase font-bold text-amber-600">{order.UrgencyLevel}</div>
                       )}
-                      {order.address?.city && (
+                      {!isTailor && order.address?.city && (
                         <div className="text-xs text-gray-400">{order.address.city}{order.address.state ? `, ${order.address.state}` : ""}</div>
                       )}
                     </td>
@@ -320,8 +324,12 @@ export default function OrderDetailsPage() {
                       )}
                     </td>
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-gray-800">{order.AmountDisplay || "-"}</div>
-                      <div className="text-gray-400 text-xs">{paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)}</div>
+                      {!isTailor && (
+                        <>
+                          <div className="font-semibold text-gray-800">{order.AmountDisplay || "-"}</div>
+                          <div className="text-gray-400 text-xs">{paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)}</div>
+                        </>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <StatusBadge

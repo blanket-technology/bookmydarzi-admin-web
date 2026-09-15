@@ -712,7 +712,7 @@ export default function OrderFullDetailsPage() {
                 {order.OrderCode || order.OrderNumber || `Order #${order.Id}`}
               </h1>
               <p className="text-teal-200 text-[11px]">
-                {order.address?.full_name ? `for ${order.address.full_name}` : "Order Management & Workflow"}
+                {!isTailor && order.address?.full_name ? `for ${order.address.full_name}` : "Order Management & Workflow"}
               </p>
             </div>
           </div>
@@ -721,15 +721,17 @@ export default function OrderFullDetailsPage() {
               <span className={`w-1.5 h-1.5 rounded-full ${theme.dot}`} />
               {STATUS_LABELS[status] || order.StatusLabel || order.Status}
             </span>
-            <button
-              onClick={downloadInvoice}
-              disabled={invoiceLoading}
-              title="Download Invoice PDF"
-              className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
-            >
-              {invoiceLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
-              <span className="hidden sm:inline">Invoice</span>
-            </button>
+            {!isTailor && (
+              <button
+                onClick={downloadInvoice}
+                disabled={invoiceLoading}
+                title="Download Invoice PDF"
+                className="flex items-center gap-1.5 bg-white/15 hover:bg-white/25 text-white px-3 py-1.5 rounded-xl text-xs font-semibold disabled:opacity-50 transition-all"
+              >
+                {invoiceLoading ? <Loader2 size={13} className="animate-spin" /> : <Download size={13} />}
+                <span className="hidden sm:inline">Invoice</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1323,65 +1325,72 @@ export default function OrderFullDetailsPage() {
               )}
             </SectionCard>
 
-            {/* Payment */}
-            <SectionCard icon={CreditCard} title="Payment" accent={theme.accent}>
-              <div className="grid grid-cols-2 gap-4">
-                <Fact label="Total" value={order.AmountDisplay} emphasis />
-                <Fact label="Balance" value={order.RemainingAmountDisplay} emphasis={Number(order.RemainingAmount) > 0} />
-                <Fact label="Advance" value={order.BookingAmount ? formatCurrency(order.BookingAmount) : null} />
-                <Fact label="Status" value={paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)} />
-              </div>
-            </SectionCard>
+            {/* Payment - never shown to tailors (price/payment detail is a
+                staff-and-customer concern only, see
+                order_response_builder.redact_order_response_for_tailor). */}
+            {!isTailor && (
+              <SectionCard icon={CreditCard} title="Payment" accent={theme.accent}>
+                <div className="grid grid-cols-2 gap-4">
+                  <Fact label="Total" value={order.AmountDisplay} emphasis />
+                  <Fact label="Balance" value={order.RemainingAmountDisplay} emphasis={Number(order.RemainingAmount) > 0} />
+                  <Fact label="Advance" value={order.BookingAmount ? formatCurrency(order.BookingAmount) : null} />
+                  <Fact label="Status" value={paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)} />
+                </div>
+              </SectionCard>
+            )}
 
-            {/* Customer & Address */}
-            <SectionCard icon={MapPin} title="Delivery Address" accent={theme.accent}>
-              <div className="space-y-2.5">
-                {order.address?.full_name && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <User size={13} className="text-gray-400 shrink-0" />
-                    <span className="font-semibold text-gray-800">{order.address.full_name}</span>
-                  </div>
-                )}
-                {order.address?.mobile && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone size={13} className="text-gray-400 shrink-0" />
-                    <span className="text-gray-600">{order.address.mobile}</span>
-                  </div>
-                )}
-                {(() => {
-                  const a = order.address || {};
-                  // Backend (AddressResponseSchema) uses snake_case with the
-                  // trailing "_1"/"_2" - the old code read address_line1 (no
-                  // underscore) so the street never rendered. Build the full
-                  // address from every available part.
-                  const line1 = a.address_line_1 || a.address_line1 || a.AddressLine1;
-                  const line2 = a.address_line_2 || a.address_line2 || a.AddressLine2;
-                  const landmark = a.landmark || a.Landmark;
-                  const cityStatePin = [a.city || a.City, a.state || a.State, a.pincode || a.Pincode]
-                    .filter(Boolean).join(", ");
-                  const type = a.address_type || a.AddressType;
-                  const hasAny = line1 || line2 || landmark || cityStatePin;
-                  if (!hasAny) {
-                    return <p className="text-sm text-gray-400">No delivery address on file.</p>;
-                  }
-                  return (
-                    <div className="flex items-start gap-2 text-sm">
-                      <MapPin size={13} className="text-gray-400 shrink-0 mt-0.5" />
-                      <p className="text-gray-600 leading-relaxed">
-                        {line1 && <>{line1}<br /></>}
-                        {line2 && <>{line2}<br /></>}
-                        {landmark && <span className="text-gray-500">Near {landmark}<br /></span>}
-                        {cityStatePin && <span className="font-medium text-gray-700">{cityStatePin}</span>}
-                        {type && (
-                          <span className="ml-2 inline-block text-[10px] font-bold uppercase text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">{type}</span>
-                        )}
-                      </p>
+            {/* Customer & Address - never shown to tailors (customer identity/
+                contact/address must stay staff-and-customer only). */}
+            {!isTailor && (
+              <SectionCard icon={MapPin} title="Delivery Address" accent={theme.accent}>
+                <div className="space-y-2.5">
+                  {order.address?.full_name && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <User size={13} className="text-gray-400 shrink-0" />
+                      <span className="font-semibold text-gray-800">{order.address.full_name}</span>
                     </div>
-                  );
-                })()}
-                <ServiceabilityBadge address={order.address} />
-              </div>
-            </SectionCard>
+                  )}
+                  {order.address?.mobile && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone size={13} className="text-gray-400 shrink-0" />
+                      <span className="text-gray-600">{order.address.mobile}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const a = order.address || {};
+                    // Backend (AddressResponseSchema) uses snake_case with the
+                    // trailing "_1"/"_2" - the old code read address_line1 (no
+                    // underscore) so the street never rendered. Build the full
+                    // address from every available part.
+                    const line1 = a.address_line_1 || a.address_line1 || a.AddressLine1;
+                    const line2 = a.address_line_2 || a.address_line2 || a.AddressLine2;
+                    const landmark = a.landmark || a.Landmark;
+                    const cityStatePin = [a.city || a.City, a.state || a.State, a.pincode || a.Pincode]
+                      .filter(Boolean).join(", ");
+                    const type = a.address_type || a.AddressType;
+                    const hasAny = line1 || line2 || landmark || cityStatePin;
+                    if (!hasAny) {
+                      return <p className="text-sm text-gray-400">No delivery address on file.</p>;
+                    }
+                    return (
+                      <div className="flex items-start gap-2 text-sm">
+                        <MapPin size={13} className="text-gray-400 shrink-0 mt-0.5" />
+                        <p className="text-gray-600 leading-relaxed">
+                          {line1 && <>{line1}<br /></>}
+                          {line2 && <>{line2}<br /></>}
+                          {landmark && <span className="text-gray-500">Near {landmark}<br /></span>}
+                          {cityStatePin && <span className="font-medium text-gray-700">{cityStatePin}</span>}
+                          {type && (
+                            <span className="ml-2 inline-block text-[10px] font-bold uppercase text-teal-700 bg-teal-50 px-1.5 py-0.5 rounded">{type}</span>
+                          )}
+                        </p>
+                      </div>
+                    );
+                  })()}
+                  <ServiceabilityBadge address={order.address} />
+                </div>
+              </SectionCard>
+            )}
 
             {/* Tailor Assignment */}
             <SectionCard icon={Scissors} title="Tailor Assignment" accent={theme.accent}>
