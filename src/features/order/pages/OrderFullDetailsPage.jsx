@@ -740,6 +740,13 @@ export default function OrderFullDetailsPage() {
         {/* ── Lifecycle progress: where this order is, at a glance ──────── */}
         <div className="mb-6">
           <StatusStepper status={status} />
+          {isTailor && (status === "tailor_assigned" || status === "picked_up") && (
+            <p className="mt-3 text-xs text-gray-500 bg-teal-50 border border-teal-100 rounded-xl px-3 py-2">
+              {status === "picked_up"
+                ? "The cloth has been picked up and is on its way to you. Stitching actions will appear here once it's handed over."
+                : "A Bridge team member will collect the cloth from the customer and hand it to you. Stitching actions will appear here once you've received it."}
+            </p>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
