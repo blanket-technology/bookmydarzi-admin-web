@@ -88,3 +88,65 @@ Plan the HttpOnly-cookie migration as the first post-launch hardening item.
 4. Verify WebSocket real-time (chat + notifications) still connects after the
    auth-frame migration - connect, confirm messages flow. (Backend already
    supports it; this is just a smoke test.)
+
+---
+
+## Follow-up audit (later session) - HttpOnly-cookie migration blocked, CSP added instead
+
+Re-audited to check whether the deferred HttpOnly-cookie migration (above) could
+now go ahead. **It cannot yet**, for a reason specific to this app's deployment
+that wasn't true when this doc was first written:
+
+- The admin panel (Vercel) and the backend (Railway, `web-production-efff7.up.railway.app`)
+  are on **completely unrelated domains** - not even a shared top-level domain.
+  A real `HttpOnly` cookie set by the backend is scoped to the backend's own
+  domain; the browser will not send it back on requests the admin panel's JS
+  origin makes to that domain unless both sides are under one shared root
+  domain (e.g. `admin.bookmydarzi.com` + `api.bookmydarzi.com`) with
+  `SameSite=None; Secure` cross-subdomain cookies, or a server-side proxy is
+  added in front of the admin panel (the pattern the customer-facing Next.js
+  site uses, which this Vite SPA has no equivalent of).
+- Setting up custom domains is a DNS/hosting change, not a code change, and
+  needs to happen **before** any cookie-based auth code is written on either
+  side - doing the code first would ship something untestable and likely
+  broken against the current Vercel/Railway default domains.
+
+**Decision: defer the cookie migration again**, now explicitly blocked on
+custom-domain setup (Vercel custom domain + Railway custom domain, both under
+one root domain), not just "backend work." Once that DNS/hosting change is in
+place, revisit this migration.
+
+**Shipped now instead - CSP hardening (`vercel.json`)**: added a
+`Content-Security-Policy` plus `X-Frame-Options`, `X-Content-Type-Options`,
+`Referrer-Policy`, and `Permissions-Policy` headers. This doesn't remove the
+`sessionStorage` exposure itself, but it meaningfully shrinks the attack
+surface that could ever get a script running in this page in the first
+place (e.g. a compromised npm dependency trying to inject a remote script,
+or exfiltrate data to an unexpected origin) - `script-src 'self'` blocks any
+script not in this app's own bundle, and `connect-src` is locked to the
+backend + Firebase Cloud Messaging's known endpoints only.
+
+**⚠️ `vercel.json`'s CSP hardcodes the current backend origin
+(`https://web-production-efff7.up.railway.app`) in `connect-src`/`img-src`,
+duplicating `VITE_API_URL`'s value** - static headers can't read a build-time
+env var, since Vercel's `headers` config is evaluated independently of the
+Vite build. **If `VITE_API_URL` (the Railway backend URL) is ever changed,
+`vercel.json` must be updated to match, or the CSP will block all API/WS
+traffic and the app will appear completely broken (network errors on every
+request).** This is the same coupling risk `SECURITY.md`'s original fix #6
+tried to eliminate for hardcoded URLs elsewhere in the app - it's
+reintroduced here only because Vercel's static header config has no way to
+reference a runtime/build env var. If the backend URL becomes stable long-term,
+consider revisiting this; if the custom-domain migration above happens first,
+the CSP should be rewritten around the new domains at the same time.
+
+Also fixed as part of this pass: **`bookmydarzi-web-final` (customer site)**
+had `dangerouslySetInnerHTML={{ __html: JSON.stringify(...) }}` for JSON-LD
+structured data on 5 pages - `JSON.stringify` alone doesn't escape a literal
+`</script>` sequence inside a string value, so admin-catalog content (service/
+category names) containing that exact substring could close the script tag
+early and inject a sibling script. Added `jsonLdScript()` in `lib/seo.ts`
+(escapes `<` as `<`) and switched all 5 call sites to it. This app's
+tokens are HttpOnly cookies already (see that repo's own audit notes), so this
+was never a token-theft vector - it's a plain XSS-hardening fix, independent
+of the admin-panel cookie question above.
