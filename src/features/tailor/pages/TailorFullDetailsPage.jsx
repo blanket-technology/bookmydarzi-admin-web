@@ -116,6 +116,11 @@ export default function TailorFullDetailsPage() {
   });
 
   const [form, setForm] = useState(() => formFromData(tailorData));
+  // Snapshot of `form` as last loaded from the server - compared against
+  // the live `form` to gate the Save button on an actual change, instead of
+  // it always being enabled the instant Edit is opened even with nothing
+  // touched.
+  const [originalForm, setOriginalForm] = useState(() => formFromData(tailorData));
 
   const loadedTailorId = useRef(null);
   useEffect(() => {
@@ -123,7 +128,9 @@ export default function TailorFullDetailsPage() {
     if (incoming && incoming !== loadedTailorId.current) {
       loadedTailorId.current = incoming;
       setLiveData(tailorData);
-      setForm(formFromData(tailorData));
+      const fresh = formFromData(tailorData);
+      setForm(fresh);
+      setOriginalForm(fresh);
     }
   }, [location.state]);
 
@@ -143,7 +150,9 @@ export default function TailorFullDetailsPage() {
         const fresh = res.data;
         loadedTailorId.current = fresh.tailor_id ?? tid;
         setLiveData(fresh);
-        setForm(formFromData(fresh));
+        const freshForm = formFromData(fresh);
+        setForm(freshForm);
+        setOriginalForm(freshForm);
         setKycUrls({
           aadhar:   fresh.aadhar_url   || null,
           pan_card: fresh.pan_card_url || null,
@@ -167,6 +176,7 @@ export default function TailorFullDetailsPage() {
   const [errors,  setErrors]  = useState({});
   const [touched, setTouched] = useState({});
   const [editMode, setEditMode] = useState(false);
+  const editFormRef = useRef(null);
   const [photo,   setPhoto]   = useState(null);
   const [verifying, setVerifying] = useState(false);
   const [verifyMsg, setVerifyMsg] = useState(null);
@@ -176,6 +186,15 @@ export default function TailorFullDetailsPage() {
   const [saveMsg, setSaveMsg] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteKycKey, setDeleteKycKey] = useState(null);
+
+  // Gates the Save button on an actual change - previously it was always
+  // enabled the instant Edit opened, even with nothing touched. A pending
+  // photo/KYC file pick counts as dirty too, not just the text/select fields.
+  const isFormDirty = useMemo(() => {
+    const fieldsChanged = Object.keys(originalForm).some((key) => form[key] !== originalForm[key]);
+    const filesChanged = !!photo || Object.values(kycFiles).some(Boolean);
+    return fieldsChanged || filesChanged;
+  }, [form, originalForm, photo, kycFiles]);
 
   // Includes both persisted URLs and locally-picked-but-not-yet-uploaded
   // files, purely for the "N/3 selected" progress display.
@@ -336,6 +355,7 @@ export default function TailorFullDetailsPage() {
         is_active:      payload.is_active,
         is_available:   payload.is_available,
       }));
+      setOriginalForm(form);
       setSaveMsg("success");
       setEditMode(false);
       setTimeout(() => setSaveMsg(null), 4000);
@@ -398,6 +418,14 @@ export default function TailorFullDetailsPage() {
   const handleEdit = () => {
     setEditMode(true);
     setSaveMsg(null);
+    // The edit form renders far down the page (after KYC/orders/workload
+    // sections) - without this, tapping "Edit Profile" in the hero gives no
+    // visual feedback that anything happened, since the form appears fully
+    // off-screen below the fold. Deferred a tick so the form has actually
+    // mounted (editMode flips this same render) before scrolling to it.
+    requestAnimationFrame(() => {
+      editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const handleCancel = () => {
@@ -585,7 +613,8 @@ export default function TailorFullDetailsPage() {
             editMode ? (
               <>
                 <HeroActionButton onClick={handleCancel} icon={X} label="Cancel" />
-                <button onClick={handleSave} disabled={saving}
+                <button onClick={handleSave} disabled={saving || !isFormDirty}
+                  title={!isFormDirty ? "No changes to save" : undefined}
                   className="flex items-center gap-1.5 h-9 px-4 bg-white text-teal-700 rounded-lg text-xs font-bold hover:bg-teal-50 transition-all shadow-lg disabled:opacity-60">
                   <Save size={13} /> <span className="hidden sm:inline">{saving ? "Saving…" : "Save Changes"}</span>
                 </button>
@@ -963,7 +992,7 @@ export default function TailorFullDetailsPage() {
           )}
 
           {editMode && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
+            <div ref={editFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-5">
               <SectionHeader icon={User} title="Edit Personal Information" subtitle="Basic profile and contact details" />
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">

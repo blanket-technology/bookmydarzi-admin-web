@@ -253,6 +253,7 @@ export default function OrderDetailsPage() {
           <table className="w-full text-sm">
             <thead className="bg-brand text-white">
               <tr>
+                <th className="px-4 py-3 text-center font-semibold">S.No.</th>
                 <th className="px-4 py-3 text-left font-semibold">Order Code</th>
                 <th className="px-4 py-3 text-left font-semibold">Customer</th>
                 <th className="px-4 py-3 text-left font-semibold">Date</th>
@@ -266,20 +267,20 @@ export default function OrderDetailsPage() {
             <tbody className="divide-y divide-gray-50">
               {fetching ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10">
+                  <td colSpan={9} className="text-center py-10">
                     <Loader2 className="animate-spin mx-auto text-teal-600" size={24} />
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="text-center py-10 text-gray-400 font-medium">
+                  <td colSpan={9} className="text-center py-10 text-gray-400 font-medium">
                     {needsManualAssignment
                       ? "No orders currently need manual tailor assignment."
                       : `No orders found${filterStatus ? ` with status "${STATUS_LABELS[filterStatus] || filterStatus.replace(/_/g, " ")}"` : ""}.`}
                   </td>
                 </tr>
               ) : (
-                orders.map((order) => (
+                orders.map((order, i) => (
                   <tr
                     key={order.Id}
                     onClick={() => navigate(`/orders/${order.Id}`, { state: { order } })}
@@ -287,6 +288,7 @@ export default function OrderDetailsPage() {
                       order.NeedsManualAssignment ? "bg-rose-50/60 hover:bg-rose-50" : "hover:bg-teal-50/40"
                     }`}
                   >
+                    <td className="px-4 py-3 text-center text-gray-400 font-mono text-xs">{(page - 1) * limit + i + 1}</td>
                     <td className="px-4 py-3 font-mono font-bold text-teal-700 whitespace-nowrap">
                       {order.OrderCode || order.OrderNumber || `#${order.Id}`}
                     </td>

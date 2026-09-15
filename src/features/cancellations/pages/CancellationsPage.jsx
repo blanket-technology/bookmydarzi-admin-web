@@ -9,6 +9,7 @@ import PolicyEditor from "../components/PolicyEditor.jsx";
 import CancellationBadge from "../components/CancellationBadge.jsx";
 import useCancellations from "../hooks/useCancellations.js";
 import {
+  PAGE_SIZE,
   PAYMENT_BADGE,
   PAYMENT_FILTER_OPTIONS,
   STATUS_BADGE,
@@ -103,8 +104,9 @@ export default function CancellationsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {items.map((item) => (
+                {items.map((item, i) => (
                   <tr key={item.Id} className="hover:bg-slate-50 transition-colors">
+                    <td className="px-4 py-3 text-xs text-slate-400 font-mono whitespace-nowrap">{(page - 1) * PAGE_SIZE + i + 1}</td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500 whitespace-nowrap">{item.CancellationCode || `#${item.Id}`}</td>
                     <td className="px-4 py-3 font-semibold text-slate-800 whitespace-nowrap">{item.OrderCode || item.OrderId}</td>
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
@@ -141,16 +143,16 @@ export default function CancellationsPage() {
 
       {totalPages > 1 && (
         <div className="flex items-center justify-between mt-4">
-          <p className="text-sm text-slate-500">Page {page + 1} of {totalPages}</p>
+          <p className="text-sm text-slate-500">Page {page} of {totalPages}</p>
           <div className="flex gap-2">
             <button
-              onClick={() => setPage(Math.max(0, page - 1))}
-              disabled={page === 0}
+              onClick={() => setPage(Math.max(1, page - 1))}
+              disabled={page === 1}
               className="px-3 py-1.5 border rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
             >Prev</button>
             <button
-              onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
-              disabled={page >= totalPages - 1}
+              onClick={() => setPage(Math.min(totalPages, page + 1))}
+              disabled={page >= totalPages}
               className="px-3 py-1.5 border rounded-lg text-sm font-semibold disabled:opacity-40 hover:bg-slate-50"
             >Next</button>
           </div>

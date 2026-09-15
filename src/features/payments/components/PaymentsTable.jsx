@@ -24,6 +24,8 @@ function IconButton({ onClick, title, tone, spinning, disabled, children }) {
 export default function PaymentsTable({
   orders,
   loading,
+  page = 1,
+  limit = 20,
   canManage,
   onViewDetail,
   onRefund,
@@ -36,13 +38,15 @@ export default function PaymentsTable({
   // page actually has an action to offer - otherwise every cell would just
   // be empty padding. Row count stays consistent for colSpan either way.
   const hasAnyAction = canManage && orders.length > 0;
-  const columnCount = hasAnyAction ? 6 : 5;
+  const columnCount = (hasAnyAction ? 6 : 5) + 1; // +1 for S.No.
+  const rowOffset = (Math.max(1, page) - 1) * limit;
 
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="bg-brand text-white">
           <tr>
+            <th className="px-4 py-3 text-center font-semibold">S.No.</th>
             <th className="px-4 py-3 text-left font-semibold">Order</th>
             <th className="px-4 py-3 text-left font-semibold">Service</th>
             <th className="px-4 py-3 text-right font-semibold">Total</th>
@@ -64,7 +68,7 @@ export default function PaymentsTable({
               </td>
             </tr>
           ) : (
-            orders.map((order) => {
+            orders.map((order, i) => {
               const hasBalance = order.BalanceDue && Number(order.RemainingAmount) > 0;
               return (
                 <tr
@@ -72,6 +76,7 @@ export default function PaymentsTable({
                   onClick={() => onViewDetail(order.Id)}
                   className="group hover:bg-gray-50 transition-colors text-gray-700 cursor-pointer"
                 >
+                  <td className="px-4 py-3 text-center text-gray-400 font-mono text-[11px]">{rowOffset + i + 1}</td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center gap-2">
                       <span className="font-mono font-bold text-teal-700">{order.OrderCode || order.OrderNumber}</span>

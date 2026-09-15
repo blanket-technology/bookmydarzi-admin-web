@@ -58,6 +58,7 @@ export default function UserTable({
       emptyIcon={UsersIcon}
       emptyMessage={`No accounts found${roleFilter ? ` with role "${activeRoleLabel}"` : ""}${search ? ` for "${search}"` : ""}.`}
       pagination={{ page, total, limit, onPageChange, onLimitChange }}
+      showSerialNumber
       renderRow={(u) => {
         const displayName = u.FullName || "Unnamed";
         const initials = (u.FullName || u.Email || "U").trim()[0].toUpperCase();

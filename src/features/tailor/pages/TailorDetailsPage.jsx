@@ -304,6 +304,7 @@ export default function TailorDetailsPage() {
           emptyIcon={Scissors}
           emptyMessage={`No tailors found${search ? ` for "${search}"` : ""}.`}
           pagination={{ page, total: filteredTailors.length, limit, onPageChange: setPage, onLimitChange: (l) => { setLimit(l); setPage(1); } }}
+          showSerialNumber
           renderRow={(tailor) => (
             <tr
               key={tailor.tailor_id}

@@ -1,5 +1,21 @@
+import { cloneElement } from "react";
 import { Loader2 } from "lucide-react";
 import Pagination from "./Pagination";
+
+// Prepends a serial-number <td> as the first cell of the <tr> a page's
+// renderRow already built, rather than requiring every caller to add it
+// themselves. renderRow's returned element's own children become siblings
+// after this cell.
+function withSerialCell(trElement, serial) {
+  return cloneElement(trElement, {
+    children: [
+      <td key="__serial" className="px-4 py-3 text-center text-gray-400 font-mono text-[11px]">
+        {serial}
+      </td>,
+      ...(Array.isArray(trElement.props.children) ? trElement.props.children : [trElement.props.children]),
+    ],
+  });
+}
 
 /**
  * DataTable - shared table shell (header bar, loading state, empty state,
@@ -23,6 +39,12 @@ import Pagination from "./Pagination";
  *   emptyMessage {string}   shown when rows.length === 0 and not loading
  *   emptyIcon    {ComponentType}  optional lucide icon shown above emptyMessage
  *   pagination   {{ page, total, limit, onPageChange, onLimitChange }} - omit to hide
+ *   showSerialNumber {boolean} - prepends a "S.No." column, numbered
+ *     continuously across pages ((page-1)*limit + index + 1) using
+ *     pagination.page/limit, not just a per-page 1..N reset. Requires
+ *     `pagination` to be passed (falls back to a plain 1-based per-page
+ *     index otherwise). Injected here rather than in each page's own
+ *     renderRow so every DataTable-based list gets it for free.
  */
 export default function DataTable({
   columns,
@@ -33,9 +55,14 @@ export default function DataTable({
   emptyMessage = "No records found.",
   emptyIcon: EmptyIcon,
   pagination,
+  showSerialNumber = false,
 }) {
-  const colSpan = columns.length;
+  const displayColumns = showSerialNumber
+    ? [{ key: "__serial", label: "S.No.", align: "center" }, ...columns]
+    : columns;
+  const colSpan = displayColumns.length;
   const getKey = rowKey ?? ((row) => row.id ?? row.Id);
+  const rowOffset = pagination ? (Math.max(1, pagination.page) - 1) * pagination.limit : 0;
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -43,7 +70,7 @@ export default function DataTable({
         <table className="w-full text-xs">
           <thead className="bg-brand text-white">
             <tr>
-              {columns.map((col) => (
+              {displayColumns.map((col) => (
                 <th
                   key={col.key}
                   className={`px-4 py-3 font-semibold ${
@@ -75,7 +102,11 @@ export default function DataTable({
               </tr>
             ) : (
               rows.map((row, i) => (
-                <SafeRow key={getKey(row) ?? i}>{renderRow(row, i)}</SafeRow>
+                <SafeRow key={getKey(row) ?? i}>
+                  {showSerialNumber
+                    ? withSerialCell(renderRow(row, i), rowOffset + i + 1)
+                    : renderRow(row, i)}
+                </SafeRow>
               ))
             )}
           </tbody>

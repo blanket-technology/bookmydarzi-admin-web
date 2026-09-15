@@ -7,6 +7,16 @@ export const ROLE_OPTIONS = [
   { value: "superadmin", label: "Super Admin" },
 ];
 
+/** Role-filter options scoped to the viewer's own role - a plain Admin has
+ * no business filtering/searching to peer or superior Admin/Superadmin
+ * accounts (backend independently enforces this too, see GET /admin/users'
+ * caller_role scoping - this is UX, not the real security boundary). Only
+ * Superadmin sees the full ROLE_OPTIONS list. */
+export function getRoleOptionsForViewer(viewerRole) {
+  if (String(viewerRole).toLowerCase() === "superadmin") return ROLE_OPTIONS;
+  return ROLE_OPTIONS.filter((r) => r.value !== "admin" && r.value !== "superadmin");
+}
+
 export const ROLE_BADGE = {
   user: "bg-blue-100 text-blue-700",
   tailor: "bg-indigo-100 text-indigo-700",

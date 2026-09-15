@@ -169,6 +169,8 @@ export default function PaymentsPage() {
           <PaymentsTable
             orders={orders}
             loading={loading}
+            page={page}
+            limit={limit}
             canManage={canManage}
             onViewDetail={setDetailOrderId}
             onRefund={setRefundOrderId}

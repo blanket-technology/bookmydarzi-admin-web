@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   Loader2, AlertCircle, Calendar,
@@ -98,12 +98,27 @@ export default function BridgeEmployeeDetailPage() {
   // scattered edit controls per section. Saving fires both PATCH calls
   // (account, then bridge-profile) together. ──
   const [editMode, setEditMode] = useState(false);
+  const editFormRef = useRef(null);
   const [editForm, setEditForm] = useState(null);
+  // Snapshot of editForm as populated by startEdit() - compared against
+  // the live editForm to gate Save on an actual change.
+  const [originalEditForm, setOriginalEditForm] = useState(null);
   const [editErrors, setEditErrors] = useState({});
   const [editTouched, setEditTouched] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
   const [photo, setPhoto] = useState(null);
+
+  // Gates the Save button on an actual change - previously it was always
+  // enabled the instant Edit opened, even with nothing touched. A pending
+  // photo pick counts as dirty too, not just the form fields.
+  const isEditFormDirty = useMemo(() => {
+    if (!editForm || !originalEditForm) return false;
+    const fieldsChanged = Object.keys(originalEditForm).some(
+      (key) => editForm[key] !== originalEditForm[key],
+    );
+    return fieldsChanged || !!photo;
+  }, [editForm, originalEditForm, photo]);
 
   // ── KYC documents - same shape/handlers as Tailor/TailorFullDetails.jsx,
   // just posting to /admin/staff/{id}/kyc instead of /admin/tailors/{id}/kyc. ──
@@ -220,7 +235,7 @@ export default function BridgeEmployeeDetailPage() {
     const p = staff?.bridge_professional_details ?? {};
     const e = staff?.bridge_earnings ?? {};
     const w = staff?.bridge_workload ?? {};
-    setEditForm({
+    const initial = {
       full_name: staff?.full_name || "",
       email: staff?.email || "",
       mobile: staff?.mobile || "",
@@ -234,11 +249,19 @@ export default function BridgeEmployeeDetailPage() {
       max_orders_per_day: w.max_orders_per_day ?? "",
       total_earnings: e.total_earnings ?? "",
       incentives_earned: e.incentives_earned ?? "",
-    });
+    };
+    setEditForm(initial);
+    setOriginalEditForm(initial);
     setEditErrors({});
     setEditTouched({});
     setSaveMsg(null);
     setEditMode(true);
+    // The edit form renders far down the page (after KPI/tab-content
+    // sections) - without this, tapping "Edit" in the hero gives no visual
+    // feedback since the form appears fully off-screen below the fold.
+    requestAnimationFrame(() => {
+      editFormRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
   };
 
   const onEditChange = (e) => {
@@ -312,6 +335,7 @@ export default function BridgeEmployeeDetailPage() {
         ? { ...res.data, profile_image_url: uploadedPhotoUrl }
         : res.data;
       setStaff(updated);
+      setOriginalEditForm(editForm);
       setSaveMsg("success");
       setEditMode(false);
       setTimeout(() => setSaveMsg(null), 4000);
@@ -881,7 +905,7 @@ export default function BridgeEmployeeDetailPage() {
             )}
 
             {editMode && (
-              <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
+              <div ref={editFormRef} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 space-y-6">
                 <SectionHeader icon={User} title="Edit Employee" subtitle="Account details and professional information, all in one place" />
 
                 {saveMsg && (
@@ -986,7 +1010,8 @@ export default function BridgeEmployeeDetailPage() {
                     className="flex-1 h-11 px-6 bg-gray-100 hover:bg-gray-200 disabled:opacity-50 text-gray-700 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all">
                     <RotateCcw size={15} /> Cancel
                   </button>
-                  <button type="button" onClick={saveEdit} disabled={saving}
+                  <button type="button" onClick={saveEdit} disabled={saving || !isEditFormDirty}
+                    title={!isEditFormDirty ? "No changes to save" : undefined}
                     className="flex-1 h-11 px-8 bg-teal-700 hover:bg-teal-800 disabled:opacity-60 text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all">
                     {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
                     {saving ? "Saving…" : "Save Changes"}

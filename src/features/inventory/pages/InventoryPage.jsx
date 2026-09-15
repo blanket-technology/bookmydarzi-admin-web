@@ -196,6 +196,7 @@ export default function InventoryPage() {
         emptyMessage={search ? "No matching items." : "No inventory items yet."}
         emptyIcon={Package}
         pagination={{ page, total: filtered.length, limit, onPageChange: setPage, onLimitChange: (l) => { setLimit(l); setPage(1); } }}
+        showSerialNumber
         renderRow={(it) => (
           <tr key={it.Id} className="hover:bg-teal-50/40 transition-colors text-gray-700">
             <td className="px-4 py-2.5 font-semibold">{it.Name}</td>
