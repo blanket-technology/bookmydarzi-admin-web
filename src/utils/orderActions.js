@@ -132,6 +132,14 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
+  // assert_pickup_employee_assigned (order_authorization.py) hard-requires
+  // AssignedEmployeeId on the order before schedule-pickup/confirm-pickup/
+  // hand-to-tailor can succeed - admins included, no bypass. Surface that
+  // here the same way hand_to_tailor's own TailorId check already does
+  // below, so the button explains why it's disabled instead of failing
+  // server-side with no context.
+  const noBridgeEmployee = !order.AssignedEmployeeId;
+
   // ── order_accepted → schedule pickup (parallel to broadcast, which is automatic) ──
   if (status === ORDER_STATUS.ORDER_ACCEPTED && (role === ROLE.EMPLOYEE || staff)) {
     actions.push({
@@ -141,6 +149,7 @@ export function getOrderActions(role, order, payment) {
       method: "patch",
       body: { pickup_type: "instant" },
       group: "primary",
+      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
     actions.push({
       id: "schedule_pickup_scheduled",
@@ -154,6 +163,7 @@ export function getOrderActions(role, order, payment) {
         pickup_time_slot: input.pickup_time_slot,
       }),
       group: "secondary",
+      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -169,6 +179,7 @@ export function getOrderActions(role, order, payment) {
       method: "patch",
       body: { pickup_type: "instant" },
       group: "primary",
+      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
     actions.push({
       id: "schedule_pickup_scheduled",
@@ -182,6 +193,7 @@ export function getOrderActions(role, order, payment) {
         pickup_time_slot: input.pickup_time_slot,
       }),
       group: "secondary",
+      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -196,6 +208,7 @@ export function getOrderActions(role, order, payment) {
       endpoint: (o) => `/employee/orders/${o.Id}/pickup`,
       method: "patch",
       group: "primary",
+      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -207,7 +220,11 @@ export function getOrderActions(role, order, payment) {
       endpoint: (o) => `/employee/orders/${o.Id}/hand-to-tailor`,
       method: "patch",
       group: "primary",
-      disabledReason: !order.TailorId ? "Assign a tailor first" : null,
+      disabledReason: !order.TailorId
+        ? "Assign a tailor first"
+        : noBridgeEmployee
+          ? "Assign a Bridge employee for pickup first"
+          : null,
     });
   }
 
