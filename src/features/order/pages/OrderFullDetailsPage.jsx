@@ -47,6 +47,24 @@ const PHOTO_UPLOAD_STAGES = new Set([
   ORDER_STATUS.FINAL_CHECK,
 ]);
 
+// Mirrors backend assign_bridge_service.py's _PICKUP_ASSIGN_FROM_UNCLAIMED_ONLY -
+// every pre-delivery status past tailor_assigned where a pickup employee can
+// still be manually attached, but ONLY as record-keeping (AssignedEmployeeId
+// must still be null) - covers orders an admin walked through the pickup
+// pipeline via the employee-action endpoints' admin-bypass without ever
+// assigning anyone.
+const PICKUP_ASSIGNABLE_UNCLAIMED_STATUSES = new Set([
+  ORDER_STATUS.ORDER_ACCEPTED,
+  ORDER_STATUS.PICKUP_PENDING,
+  ORDER_STATUS.PICKUP_SCHEDULED,
+  ORDER_STATUS.PICKED_UP,
+  ORDER_STATUS.CLOTH_RECEIVED_BY_TAILOR,
+  ORDER_STATUS.STITCHING_STARTED,
+  ORDER_STATUS.IN_PROGRESS,
+  ORDER_STATUS.FINAL_CHECK,
+  ORDER_STATUS.READY_FOR_DISPATCH,
+]);
+
 // Status → accent color family, used for both the header pill and each
 // section card's left accent stripe so the order's stage reads peripherally
 // while scrolling, not just from the one pill in the header.
@@ -1515,21 +1533,22 @@ export default function OrderFullDetailsPage() {
             </SectionCard>
 
             {/* Pickup Bridge Assignment - manual override for when no Bridge
-                employee accepts the automatic pickup broadcast. Valid at
-                tailor_assigned (the status employee_accept_pickup_broadcast
-                itself accepts), and also at pickup_pending/pickup_scheduled
-                as long as nobody has claimed it yet - an admin can schedule
-                a pickup with no employee ever having accepted it (see
-                schedule_pickup_employee_order's admin bypass), and without
-                this window that order could never be picked up by anyone
-                (see assign_bridge_service.py's _PICKUP_ASSIGN_FROM comment
-                for the full explanation). Once AssignedEmployeeId is set,
-                this card disappears - reassigning a claimed pickup is
-                intentionally only possible earlier, at tailor_assigned. */}
+                employee accepts the automatic pickup broadcast, AND a
+                record-keeping fix for orders an admin walked through the
+                pickup pipeline without ever assigning anyone (every
+                employee-action endpoint - schedule/confirm pickup, hand to
+                tailor, etc - lets an admin bypass the "must be claimed"
+                check, so an order can reach picked_up/cloth_received/
+                stitching/etc with AssignedEmployeeId still null - see
+                assign_bridge_service.py's _PICKUP_ASSIGN_FROM comment for
+                the full explanation). Shown at tailor_assigned (genuine
+                reassignment allowed there) or at any later pre-delivery
+                status as long as nobody has been assigned yet - once
+                AssignedEmployeeId is set, this card disappears for every
+                status except tailor_assigned. */}
             {!isTailor && (
               status === "tailor_assigned" ||
-              ((status === "pickup_pending" || status === "pickup_scheduled") &&
-                !order.AssignedEmployeeId)
+              (PICKUP_ASSIGNABLE_UNCLAIMED_STATUSES.has(status) && !order.AssignedEmployeeId)
             ) && (
               <SectionCard icon={Bike} title="Pickup Assignment" accent={theme.accent}>
                 <Fact
