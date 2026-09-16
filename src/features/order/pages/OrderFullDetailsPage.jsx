@@ -1515,12 +1515,22 @@ export default function OrderFullDetailsPage() {
             </SectionCard>
 
             {/* Pickup Bridge Assignment - manual override for when no Bridge
-                employee accepts the automatic pickup broadcast. Only valid
-                while the order is still at tailor_assigned (the only status
-                employee_accept_pickup_broadcast itself accepts - see
-                assign_bridge_service.py's _PICKUP_ASSIGN_FROM), so this card
-                only shows in that window. */}
-            {!isTailor && status === "tailor_assigned" && (
+                employee accepts the automatic pickup broadcast. Valid at
+                tailor_assigned (the status employee_accept_pickup_broadcast
+                itself accepts), and also at pickup_pending/pickup_scheduled
+                as long as nobody has claimed it yet - an admin can schedule
+                a pickup with no employee ever having accepted it (see
+                schedule_pickup_employee_order's admin bypass), and without
+                this window that order could never be picked up by anyone
+                (see assign_bridge_service.py's _PICKUP_ASSIGN_FROM comment
+                for the full explanation). Once AssignedEmployeeId is set,
+                this card disappears - reassigning a claimed pickup is
+                intentionally only possible earlier, at tailor_assigned. */}
+            {!isTailor && (
+              status === "tailor_assigned" ||
+              ((status === "pickup_pending" || status === "pickup_scheduled") &&
+                !order.AssignedEmployeeId)
+            ) && (
               <SectionCard icon={Bike} title="Pickup Assignment" accent={theme.accent}>
                 <Fact
                   label="Assigned For Pickup"
