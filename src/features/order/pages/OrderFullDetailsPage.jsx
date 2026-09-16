@@ -292,8 +292,6 @@ export default function OrderFullDetailsPage() {
   const [tailors, setTailors] = useState([]);
   const [selectedTailorId, setSelectedTailorId] = useState("");
   const [bridgeEmployees, setBridgeEmployees] = useState([]);
-  const [selectedPickupEmployeeId, setSelectedPickupEmployeeId] = useState("");
-  const [selectedDeliveryEmployeeId, setSelectedDeliveryEmployeeId] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [broadcasts, setBroadcasts] = useState(null);
@@ -524,20 +522,6 @@ export default function OrderFullDetailsPage() {
       })
     );
 
-  const assignPickupEmployee = () =>
-    runAction(() =>
-      api.patch(`/admin/orders/${order.Id}/assign-pickup-employee`, {
-        employee_id: Number(selectedPickupEmployeeId),
-      })
-    );
-
-  const assignDeliveryEmployee = () =>
-    runAction(() =>
-      api.patch(`/admin/orders/${order.Id}/assign-delivery-employee`, {
-        employee_id: Number(selectedDeliveryEmployeeId),
-      })
-    );
-
   // Force-starts a fresh broadcast round (app/api/v1/endpoints/admin.py:
   // POST /admin/orders/{id}/broadcast) - clears BroadcastExhausted and calls
   // initiate_broadcast server-side. The automated system already retries on
@@ -667,6 +651,17 @@ export default function OrderFullDetailsPage() {
       loadTailors();
     }
   }, [pendingAction, loadTailors]);
+
+  // Same idea for the workflow actions that now require picking a Bridge
+  // employee (Schedule Pickup when unclaimed, Assign Delivery Employee).
+  useEffect(() => {
+    if (
+      pendingAction?.requiresInput?.includes("pickup_employee_id") ||
+      pendingAction?.requiresInput?.includes("delivery_employee_id")
+    ) {
+      loadBridgeEmployees();
+    }
+  }, [pendingAction, loadBridgeEmployees]);
 
   if (!order) {
     return (
@@ -1523,15 +1518,14 @@ export default function OrderFullDetailsPage() {
               )}
             </SectionCard>
 
-            {/* Bridge Assignment - always visible, same as Tailor Assignment
-                above, not conditionally hidden by status. The backend still
-                enforces which statuses actually accept an assignment
-                (assign_bridge_service.py's _PICKUP_ASSIGN_FROM /
-                _DELIVERY_ASSIGN_FROM) - a click at an invalid status surfaces
-                that as a clear error via runAction, exactly like every other
-                workflow action on this page, instead of the button being
-                hidden and looking like the feature doesn't exist. */}
-            {!isTailor && (
+            {/* Bridge Assignment - read-only status now. Assigning a Bridge
+                employee is no longer a standalone always-available action
+                here; it's required as part of the relevant Workflow Action
+                instead (Schedule Pickup when unclaimed, Assign Delivery
+                Employee once ready_for_dispatch) - see getOrderActions in
+                utils/orderActions.js. This avoids a picker that looks
+                available long before it can actually be used. */}
+            {!isTailor && (order.AssignedEmployeeId || order.DeliveryEmployeeId) && (
               <SectionCard icon={Bike} title="Bridge Assignment" accent={theme.accent}>
                 <Fact
                   label="Assigned For Pickup"
@@ -1553,67 +1547,6 @@ export default function OrderFullDetailsPage() {
                       : "Not assigned"
                   }
                 />
-
-                {bridgeEmployeesError && (
-                  <span className="block mt-2 text-xs text-red-600">{bridgeEmployeesError}</span>
-                )}
-                {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
-                  <span className="block mt-2 text-xs text-amber-600">
-                    No active Bridge/employee accounts found - create one under Bridge before assigning.
-                  </span>
-                )}
-
-                <div className="mt-4 flex flex-col gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Pickup</p>
-                  <select
-                    value={selectedPickupEmployeeId}
-                    onChange={(e) => setSelectedPickupEmployeeId(e.target.value)}
-                    onFocus={loadBridgeEmployees}
-                    onMouseDown={loadBridgeEmployees}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 focus:bg-white transition-colors"
-                  >
-                    <option value="">
-                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
-                    </option>
-                    {bridgeEmployees.map((e) => (
-                      <option key={e.employee_id} value={e.employee_id}>
-                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
-                      </option>
-                    ))}
-                  </select>
-                  <ActionButton
-                    label={actionLoading ? "Assigning…" : "Assign for Pickup"}
-                    onClick={assignPickupEmployee}
-                    disabled={!selectedPickupEmployeeId || actionLoading}
-                    full
-                  />
-                </div>
-
-                <div className="mt-5 flex flex-col gap-2">
-                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Delivery</p>
-                  <select
-                    value={selectedDeliveryEmployeeId}
-                    onChange={(e) => setSelectedDeliveryEmployeeId(e.target.value)}
-                    onFocus={loadBridgeEmployees}
-                    onMouseDown={loadBridgeEmployees}
-                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 focus:bg-white transition-colors"
-                  >
-                    <option value="">
-                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
-                    </option>
-                    {bridgeEmployees.map((e) => (
-                      <option key={e.employee_id} value={e.employee_id}>
-                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
-                      </option>
-                    ))}
-                  </select>
-                  <ActionButton
-                    label={actionLoading ? "Assigning…" : "Assign for Delivery"}
-                    onClick={assignDeliveryEmployee}
-                    disabled={!selectedDeliveryEmployeeId || actionLoading}
-                    full
-                  />
-                </div>
               </SectionCard>
             )}
           </div>
@@ -1693,6 +1626,58 @@ export default function OrderFullDetailsPage() {
                       <option key={t.tailor_id} value={t.tailor_id}>{t.full_name} (#{t.tailor_id})</option>
                     ))}
                   </select>
+                </div>
+              )}
+              {pendingAction.requiresInput?.includes("pickup_employee_id") && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Bridge Employee (Pickup)</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    onChange={(e) => setActionInput((p) => ({ ...p, pickup_employee_id: e.target.value }))}
+                  >
+                    <option value="">
+                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
+                    </option>
+                    {bridgeEmployees.map((e) => (
+                      <option key={e.employee_id} value={e.employee_id}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      </option>
+                    ))}
+                  </select>
+                  {bridgeEmployeesError && (
+                    <span className="block mt-1 text-xs text-red-600">{bridgeEmployeesError}</span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
+                </div>
+              )}
+              {pendingAction.requiresInput?.includes("delivery_employee_id") && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Bridge Employee (Delivery)</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    onChange={(e) => setActionInput((p) => ({ ...p, delivery_employee_id: e.target.value }))}
+                  >
+                    <option value="">
+                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
+                    </option>
+                    {bridgeEmployees.map((e) => (
+                      <option key={e.employee_id} value={e.employee_id}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      </option>
+                    ))}
+                  </select>
+                  {bridgeEmployeesError && (
+                    <span className="block mt-1 text-xs text-red-600">{bridgeEmployeesError}</span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
                 </div>
               )}
               {pendingAction.requiresInput?.includes("method") && (
