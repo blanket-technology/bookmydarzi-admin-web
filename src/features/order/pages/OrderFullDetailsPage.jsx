@@ -291,6 +291,9 @@ export default function OrderFullDetailsPage() {
   /* eslint-enable react-hooks/set-state-in-effect */
   const [tailors, setTailors] = useState([]);
   const [selectedTailorId, setSelectedTailorId] = useState("");
+  const [bridgeEmployees, setBridgeEmployees] = useState([]);
+  const [selectedPickupEmployeeId, setSelectedPickupEmployeeId] = useState("");
+  const [selectedDeliveryEmployeeId, setSelectedDeliveryEmployeeId] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
   const [msg, setMsg] = useState(null);
   const [broadcasts, setBroadcasts] = useState(null);
@@ -356,6 +359,18 @@ export default function OrderFullDetailsPage() {
       })
       .catch(() => { setTailorsLoaded(false); }); // allow retry on next focus
   }, [tailorsLoaded]);
+
+  // Same lazy-load-once pattern as loadTailors above - the Bridge employee
+  // list populates the pickup/delivery assignment pickers only, so there is
+  // no reason to fetch it on every order page load.
+  const [bridgeEmployeesLoaded, setBridgeEmployeesLoaded] = useState(false);
+  const loadBridgeEmployees = useCallback(() => {
+    if (bridgeEmployeesLoaded) return;
+    setBridgeEmployeesLoaded(true);
+    api.get("/admin/bridge-employees")
+      .then((res) => setBridgeEmployees(res.data || []))
+      .catch(() => { setBridgeEmployeesLoaded(false); });
+  }, [bridgeEmployeesLoaded]);
 
   const fetchBroadcasts = () => {
     if (!order?.Id) return;
@@ -497,6 +512,20 @@ export default function OrderFullDetailsPage() {
     runAction(() =>
       api.patch(`/admin/orders/${order.Id}/assign-tailor`, {
         tailor_id: Number(selectedTailorId),
+      })
+    );
+
+  const assignPickupEmployee = () =>
+    runAction(() =>
+      api.patch(`/admin/orders/${order.Id}/assign-pickup-employee`, {
+        employee_id: Number(selectedPickupEmployeeId),
+      })
+    );
+
+  const assignDeliveryEmployee = () =>
+    runAction(() =>
+      api.patch(`/admin/orders/${order.Id}/assign-delivery-employee`, {
+        employee_id: Number(selectedDeliveryEmployeeId),
       })
     );
 
@@ -1484,6 +1513,97 @@ export default function OrderFullDetailsPage() {
                 </div>
               )}
             </SectionCard>
+
+            {/* Pickup Bridge Assignment - manual override for when no Bridge
+                employee accepts the automatic pickup broadcast. Only valid
+                while the order is still at tailor_assigned (the only status
+                employee_accept_pickup_broadcast itself accepts - see
+                assign_bridge_service.py's _PICKUP_ASSIGN_FROM), so this card
+                only shows in that window. */}
+            {!isTailor && status === "tailor_assigned" && (
+              <SectionCard icon={Bike} title="Pickup Assignment" accent={theme.accent}>
+                <Fact
+                  label="Assigned For Pickup"
+                  value={
+                    order.AssignedEmployeeId
+                      ? order.AssignedEmployeeName
+                        ? `${order.AssignedEmployeeName} (#${order.AssignedEmployeeId})`
+                        : `#${order.AssignedEmployeeId}`
+                      : "Not assigned"
+                  }
+                />
+                <div className="mt-4 flex flex-col gap-2">
+                  <select
+                    value={selectedPickupEmployeeId}
+                    onChange={(e) => setSelectedPickupEmployeeId(e.target.value)}
+                    onFocus={loadBridgeEmployees}
+                    onMouseDown={loadBridgeEmployees}
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 focus:bg-white transition-colors"
+                  >
+                    <option value="">
+                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
+                    </option>
+                    {bridgeEmployees.map((e) => (
+                      <option key={e.employee_id} value={e.employee_id}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      </option>
+                    ))}
+                  </select>
+                  <ActionButton
+                    label={actionLoading ? "Assigning…" : "Assign for Pickup"}
+                    onClick={assignPickupEmployee}
+                    disabled={!selectedPickupEmployeeId || actionLoading}
+                    full
+                  />
+                </div>
+              </SectionCard>
+            )}
+
+            {/* Delivery Bridge Assignment - same manual override, for the
+                delivery leg. Only valid at ready_for_dispatch (the only
+                status employee_accept_delivery_broadcast accepts), or later
+                if a delivery employee still hasn't been claimed. */}
+            {!isTailor && (
+              status === "ready_for_dispatch" ||
+              (status === "out_for_delivery" && !order.DeliveryEmployeeId)
+            ) && (
+              <SectionCard icon={Bike} title="Delivery Assignment" accent={theme.accent}>
+                <Fact
+                  label="Assigned For Delivery"
+                  value={
+                    order.DeliveryEmployeeId
+                      ? order.DeliveryEmployeeName
+                        ? `${order.DeliveryEmployeeName} (#${order.DeliveryEmployeeId})`
+                        : `#${order.DeliveryEmployeeId}`
+                      : "Not assigned"
+                  }
+                />
+                <div className="mt-4 flex flex-col gap-2">
+                  <select
+                    value={selectedDeliveryEmployeeId}
+                    onChange={(e) => setSelectedDeliveryEmployeeId(e.target.value)}
+                    onFocus={loadBridgeEmployees}
+                    onMouseDown={loadBridgeEmployees}
+                    className="border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400 bg-gray-50 focus:bg-white transition-colors"
+                  >
+                    <option value="">
+                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
+                    </option>
+                    {bridgeEmployees.map((e) => (
+                      <option key={e.employee_id} value={e.employee_id}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      </option>
+                    ))}
+                  </select>
+                  <ActionButton
+                    label={actionLoading ? "Assigning…" : "Assign for Delivery"}
+                    onClick={assignDeliveryEmployee}
+                    disabled={!selectedDeliveryEmployeeId || actionLoading}
+                    full
+                  />
+                </div>
+              </SectionCard>
+            )}
           </div>
         </div>
       </div>
