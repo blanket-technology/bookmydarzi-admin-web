@@ -132,13 +132,21 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
+  // Bridge assignment is now required AS PART OF scheduling pickup when
+  // nobody is assigned yet, instead of being a separate standalone step -
   // assert_pickup_employee_assigned (order_authorization.py) hard-requires
-  // AssignedEmployeeId on the order before schedule-pickup/confirm-pickup/
-  // hand-to-tailor can succeed - admins included, no bypass. Surface that
-  // here the same way hand_to_tailor's own TailorId check already does
-  // below, so the button explains why it's disabled instead of failing
-  // server-side with no context.
-  const noBridgeEmployee = !order.AssignedEmployeeId;
+  // AssignedEmployeeId before schedule-pickup/confirm-pickup/hand-to-tailor
+  // can succeed, admins included, no bypass. Only add pickup_employee_id to
+  // requiresInput when AssignedEmployeeId is still null - if an employee
+  // already accepted the broadcast (or was assigned earlier), scheduling
+  // pickup proceeds exactly as before with no extra step; forcing a new
+  // pick every time would incorrectly demand a reassignment even when the
+  // right person is already on the order. runOrderAction assigns the
+  // chosen employee first, then schedules the pickup, as one guided action
+  // from the caller's perspective - see its own comment for why two
+  // sequential calls here is safe rather than needing one atomic backend
+  // endpoint.
+  const needsPickupEmployee = !order.AssignedEmployeeId;
 
   // ── order_accepted → schedule pickup (parallel to broadcast, which is automatic) ──
   if (status === ORDER_STATUS.ORDER_ACCEPTED && (role === ROLE.EMPLOYEE || staff)) {
@@ -147,23 +155,27 @@ export function getOrderActions(role, order, payment) {
       label: "Schedule Pickup (Instant)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
-      body: { pickup_type: "instant" },
+      requiresInput: needsPickupEmployee ? ["pickup_employee_id"] : undefined,
+      bodyFromInput: () => ({ pickup_type: "instant" }),
+      body: needsPickupEmployee ? undefined : { pickup_type: "instant" },
       group: "primary",
-      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
     actions.push({
       id: "schedule_pickup_scheduled",
       label: "Schedule Pickup (Scheduled)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
-      requiresInput: ["scheduled_pickup_at", "pickup_time_slot"],
+      requiresInput: [
+        ...(needsPickupEmployee ? ["pickup_employee_id"] : []),
+        "scheduled_pickup_at",
+        "pickup_time_slot",
+      ],
       bodyFromInput: (input) => ({
         pickup_type: "scheduled",
         scheduled_pickup_at: input.scheduled_pickup_at,
         pickup_time_slot: input.pickup_time_slot,
       }),
       group: "secondary",
-      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -177,23 +189,27 @@ export function getOrderActions(role, order, payment) {
       label: "Schedule Pickup (Instant)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
-      body: { pickup_type: "instant" },
+      requiresInput: needsPickupEmployee ? ["pickup_employee_id"] : undefined,
+      bodyFromInput: () => ({ pickup_type: "instant" }),
+      body: needsPickupEmployee ? undefined : { pickup_type: "instant" },
       group: "primary",
-      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
     actions.push({
       id: "schedule_pickup_scheduled",
       label: "Schedule Pickup (Scheduled)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
-      requiresInput: ["scheduled_pickup_at", "pickup_time_slot"],
+      requiresInput: [
+        ...(needsPickupEmployee ? ["pickup_employee_id"] : []),
+        "scheduled_pickup_at",
+        "pickup_time_slot",
+      ],
       bodyFromInput: (input) => ({
         pickup_type: "scheduled",
         scheduled_pickup_at: input.scheduled_pickup_at,
         pickup_time_slot: input.pickup_time_slot,
       }),
       group: "secondary",
-      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -293,6 +309,27 @@ export function getOrderActions(role, order, payment) {
   // OrderFullDetails.jsx's disabledReason handling for the explanatory note
   // shown in place of this action.
 
+  // ── ready_for_dispatch → manual delivery assignment (only appears once
+  // the order is actually ready for it - previously the "Delivery
+  // Assignment" picker was a standalone card visible at every status,
+  // which both looked available long before it could ever be used and let
+  // staff assign a delivery employee with no reason to yet. This is the
+  // override lever for when nobody accepts the automatic delivery
+  // broadcast, appearing exactly when it becomes relevant, not before -
+  // same underlying endpoint (assign_bridge_service.py's
+  // assign_delivery_employee) as the removed card used. ──
+  if (status === ORDER_STATUS.READY_FOR_DISPATCH && (role === ROLE.EMPLOYEE || staff) && !order.DeliveryEmployeeId) {
+    actions.push({
+      id: "assign_delivery_employee",
+      label: "Assign Delivery Employee",
+      endpoint: (o) => `/admin/orders/${o.Id}/assign-delivery-employee`,
+      method: "patch",
+      requiresInput: ["delivery_employee_id"],
+      bodyFromInput: (input) => ({ employee_id: Number(input.delivery_employee_id) }),
+      group: "secondary",
+    });
+  }
+
   // ── out_for_delivery → collect COD/balance payment (employee only, not tailor) ──
   if (status === ORDER_STATUS.OUT_FOR_DELIVERY && role === ROLE.EMPLOYEE && remaining > 0) {
     actions.push({
@@ -372,8 +409,25 @@ export function getOrderActions(role, order, payment) {
 /**
  * Convenience helper: execute an action descriptor against the shared axios
  * instance. Callers pass the resolved `api` module + any collected input.
+ *
+ * When the collected input includes pickup_employee_id (schedule_pickup_*
+ * actions, only when the order isn't already claimed - see
+ * getOrderActions' needsPickupEmployee), assign that Bridge employee to the
+ * pickup leg FIRST, then run the actual action. Two sequential calls, not
+ * one atomic backend endpoint - safe because assert_pickup_employee_
+ * assigned (order_authorization.py) already requires AssignedEmployeeId to
+ * exist before schedule-pickup will succeed, so if the assign call
+ * succeeds but the second call then fails for any reason, the order is
+ * left in a perfectly valid state (employee assigned, pickup not yet
+ * scheduled) rather than a broken or stuck one - it just means the user
+ * retries "Schedule Pickup" without needing to re-pick an employee.
  */
 export async function runOrderAction(api, action, order, input = {}) {
+  if (input.pickup_employee_id) {
+    await api.patch(`/admin/orders/${order.Id}/assign-pickup-employee`, {
+      employee_id: Number(input.pickup_employee_id),
+    });
+  }
   const url = typeof action.endpoint === "function" ? action.endpoint(order) : action.endpoint;
   const body = action.bodyFromInput ? action.bodyFromInput(input) : action.body || {};
   const method = action.method || "patch";
