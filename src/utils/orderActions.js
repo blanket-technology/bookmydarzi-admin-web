@@ -224,7 +224,7 @@ export function getOrderActions(role, order, payment) {
       endpoint: (o) => `/employee/orders/${o.Id}/pickup`,
       method: "patch",
       group: "primary",
-      disabledReason: noBridgeEmployee ? "Assign a Bridge employee for pickup first" : null,
+      disabledReason: needsPickupEmployee ? "Assign a Bridge employee for pickup first" : null,
     });
   }
 
@@ -238,7 +238,7 @@ export function getOrderActions(role, order, payment) {
       group: "primary",
       disabledReason: !order.TailorId
         ? "Assign a tailor first"
-        : noBridgeEmployee
+        : needsPickupEmployee
           ? "Assign a Bridge employee for pickup first"
           : null,
     });
