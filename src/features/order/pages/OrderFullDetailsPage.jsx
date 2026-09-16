@@ -47,24 +47,6 @@ const PHOTO_UPLOAD_STAGES = new Set([
   ORDER_STATUS.FINAL_CHECK,
 ]);
 
-// Mirrors backend assign_bridge_service.py's _PICKUP_ASSIGN_FROM_UNCLAIMED_ONLY -
-// every pre-delivery status past tailor_assigned where a pickup employee can
-// still be manually attached, but ONLY as record-keeping (AssignedEmployeeId
-// must still be null) - covers orders an admin walked through the pickup
-// pipeline via the employee-action endpoints' admin-bypass without ever
-// assigning anyone.
-const PICKUP_ASSIGNABLE_UNCLAIMED_STATUSES = new Set([
-  ORDER_STATUS.ORDER_ACCEPTED,
-  ORDER_STATUS.PICKUP_PENDING,
-  ORDER_STATUS.PICKUP_SCHEDULED,
-  ORDER_STATUS.PICKED_UP,
-  ORDER_STATUS.CLOTH_RECEIVED_BY_TAILOR,
-  ORDER_STATUS.STITCHING_STARTED,
-  ORDER_STATUS.IN_PROGRESS,
-  ORDER_STATUS.FINAL_CHECK,
-  ORDER_STATUS.READY_FOR_DISPATCH,
-]);
-
 // Status → accent color family, used for both the header pill and each
 // section card's left accent stripe so the order's stage reads peripherally
 // while scrolling, not just from the one pill in the header.
@@ -1541,25 +1523,16 @@ export default function OrderFullDetailsPage() {
               )}
             </SectionCard>
 
-            {/* Pickup Bridge Assignment - manual override for when no Bridge
-                employee accepts the automatic pickup broadcast, AND a
-                record-keeping fix for orders an admin walked through the
-                pickup pipeline without ever assigning anyone (every
-                employee-action endpoint - schedule/confirm pickup, hand to
-                tailor, etc - lets an admin bypass the "must be claimed"
-                check, so an order can reach picked_up/cloth_received/
-                stitching/etc with AssignedEmployeeId still null - see
-                assign_bridge_service.py's _PICKUP_ASSIGN_FROM comment for
-                the full explanation). Shown at tailor_assigned (genuine
-                reassignment allowed there) or at any later pre-delivery
-                status as long as nobody has been assigned yet - once
-                AssignedEmployeeId is set, this card disappears for every
-                status except tailor_assigned. */}
+            {/* Bridge Assignment - always visible, same as Tailor Assignment
+                above, not conditionally hidden by status. The backend still
+                enforces which statuses actually accept an assignment
+                (assign_bridge_service.py's _PICKUP_ASSIGN_FROM /
+                _DELIVERY_ASSIGN_FROM) - a click at an invalid status surfaces
+                that as a clear error via runAction, exactly like every other
+                workflow action on this page, instead of the button being
+                hidden and looking like the feature doesn't exist. */}
             {!isTailor && (
-              status === "tailor_assigned" ||
-              (PICKUP_ASSIGNABLE_UNCLAIMED_STATUSES.has(status) && !order.AssignedEmployeeId)
-            ) && (
-              <SectionCard icon={Bike} title="Pickup Assignment" accent={theme.accent}>
+              <SectionCard icon={Bike} title="Bridge Assignment" accent={theme.accent}>
                 <Fact
                   label="Assigned For Pickup"
                   value={
@@ -1570,7 +1543,28 @@ export default function OrderFullDetailsPage() {
                       : "Not assigned"
                   }
                 />
+                <Fact
+                  label="Assigned For Delivery"
+                  value={
+                    order.DeliveryEmployeeId
+                      ? order.DeliveryEmployeeName
+                        ? `${order.DeliveryEmployeeName} (#${order.DeliveryEmployeeId})`
+                        : `#${order.DeliveryEmployeeId}`
+                      : "Not assigned"
+                  }
+                />
+
+                {bridgeEmployeesError && (
+                  <span className="block mt-2 text-xs text-red-600">{bridgeEmployeesError}</span>
+                )}
+                {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                  <span className="block mt-2 text-xs text-amber-600">
+                    No active Bridge/employee accounts found - create one under Bridge before assigning.
+                  </span>
+                )}
+
                 <div className="mt-4 flex flex-col gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Pickup</p>
                   <select
                     value={selectedPickupEmployeeId}
                     onChange={(e) => setSelectedPickupEmployeeId(e.target.value)}
@@ -1587,14 +1581,6 @@ export default function OrderFullDetailsPage() {
                       </option>
                     ))}
                   </select>
-                  {bridgeEmployeesError && (
-                    <span className="text-xs text-red-600">{bridgeEmployeesError}</span>
-                  )}
-                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
-                    <span className="text-xs text-amber-600">
-                      No active Bridge/employee accounts found - create one under Bridge before assigning.
-                    </span>
-                  )}
                   <ActionButton
                     label={actionLoading ? "Assigning…" : "Assign for Pickup"}
                     onClick={assignPickupEmployee}
@@ -1602,29 +1588,9 @@ export default function OrderFullDetailsPage() {
                     full
                   />
                 </div>
-              </SectionCard>
-            )}
 
-            {/* Delivery Bridge Assignment - same manual override, for the
-                delivery leg. Only valid at ready_for_dispatch (the only
-                status employee_accept_delivery_broadcast accepts), or later
-                if a delivery employee still hasn't been claimed. */}
-            {!isTailor && (
-              status === "ready_for_dispatch" ||
-              (status === "out_for_delivery" && !order.DeliveryEmployeeId)
-            ) && (
-              <SectionCard icon={Bike} title="Delivery Assignment" accent={theme.accent}>
-                <Fact
-                  label="Assigned For Delivery"
-                  value={
-                    order.DeliveryEmployeeId
-                      ? order.DeliveryEmployeeName
-                        ? `${order.DeliveryEmployeeName} (#${order.DeliveryEmployeeId})`
-                        : `#${order.DeliveryEmployeeId}`
-                      : "Not assigned"
-                  }
-                />
-                <div className="mt-4 flex flex-col gap-2">
+                <div className="mt-5 flex flex-col gap-2">
+                  <p className="text-xs font-bold uppercase tracking-wide text-gray-400">Delivery</p>
                   <select
                     value={selectedDeliveryEmployeeId}
                     onChange={(e) => setSelectedDeliveryEmployeeId(e.target.value)}
@@ -1641,14 +1607,6 @@ export default function OrderFullDetailsPage() {
                       </option>
                     ))}
                   </select>
-                  {bridgeEmployeesError && (
-                    <span className="text-xs text-red-600">{bridgeEmployeesError}</span>
-                  )}
-                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
-                    <span className="text-xs text-amber-600">
-                      No active Bridge/employee accounts found - create one under Bridge before assigning.
-                    </span>
-                  )}
                   <ActionButton
                     label={actionLoading ? "Assigning…" : "Assign for Delivery"}
                     onClick={assignDeliveryEmployee}
