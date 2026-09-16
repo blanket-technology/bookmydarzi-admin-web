@@ -382,12 +382,21 @@ export default function OrderFullDetailsPage() {
   // list populates the pickup/delivery assignment pickers only, so there is
   // no reason to fetch it on every order page load.
   const [bridgeEmployeesLoaded, setBridgeEmployeesLoaded] = useState(false);
+  const [bridgeEmployeesError, setBridgeEmployeesError] = useState("");
   const loadBridgeEmployees = useCallback(() => {
     if (bridgeEmployeesLoaded) return;
     setBridgeEmployeesLoaded(true);
+    setBridgeEmployeesError("");
     api.get("/admin/bridge-employees")
       .then((res) => setBridgeEmployees(res.data || []))
-      .catch(() => { setBridgeEmployeesLoaded(false); });
+      .catch((err) => {
+        // Previously silent - the dropdown just fell back to its "tap to
+        // load" placeholder with zero indication anything went wrong,
+        // indistinguishable from "hasn't been clicked yet". Surface the
+        // real error so staff aren't left guessing why the list won't load.
+        setBridgeEmployeesLoaded(false);
+        setBridgeEmployeesError(extractErrorMessage(err, "Couldn't load Bridge employees."));
+      });
   }, [bridgeEmployeesLoaded]);
 
   const fetchBroadcasts = () => {
@@ -1578,6 +1587,14 @@ export default function OrderFullDetailsPage() {
                       </option>
                     ))}
                   </select>
+                  {bridgeEmployeesError && (
+                    <span className="text-xs text-red-600">{bridgeEmployeesError}</span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                    <span className="text-xs text-amber-600">
+                      No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
                   <ActionButton
                     label={actionLoading ? "Assigning…" : "Assign for Pickup"}
                     onClick={assignPickupEmployee}
@@ -1624,6 +1641,14 @@ export default function OrderFullDetailsPage() {
                       </option>
                     ))}
                   </select>
+                  {bridgeEmployeesError && (
+                    <span className="text-xs text-red-600">{bridgeEmployeesError}</span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                    <span className="text-xs text-amber-600">
+                      No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
                   <ActionButton
                     label={actionLoading ? "Assigning…" : "Assign for Delivery"}
                     onClick={assignDeliveryEmployee}
