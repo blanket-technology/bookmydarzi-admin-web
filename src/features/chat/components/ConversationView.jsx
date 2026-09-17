@@ -193,42 +193,120 @@ export default function ConversationView({ session, onRefresh, onResolve, onBack
 
   // Opens (and tears down/reopens) the per-session WebSocket; setWsStatus
   // calls track the socket's own connection lifecycle, not derived state.
-  /* eslint-disable react-hooks/set-state-in-effect */
+  //
+  // Reconnect: previously a dropped connection (server restart, brief
+  // network blip) just sat "disconnected" forever - the agent had to
+  // navigate away and back to get a new socket, with sendReply's own
+  // "please wait for the connection to reconnect" message being a dead end
+  // since nothing here ever actually reconnected. Ported the same
+  // exponential-backoff/heartbeat pattern already proven in this codebase's
+  // adminWsService.js (the singleton /ws connection used for order events).
   useEffect(() => {
     if (!sessionUuid || !token) return;
-    const url = getChatWsUrl(sessionUuid);
-    const ws = new WebSocket(url);
-    wsRef.current = ws;
-    setWsStatus("connecting");
 
-    ws.onopen = () => {
-      // Authenticate via the frame body (not the URL) - keeps the JWT out of
-      // access logs / history. Backend reads this as the first frame.
-      try {
-        ws.send(JSON.stringify({ type: "auth", token }));
-      } catch {
-        // send failure → server times out and closes; onclose handles it.
+    let shouldConnect = true;
+    let ws = null;
+    let reconnectTimer = null;
+    let heartbeatTimer = null;
+    let reconnectDelay = 3000;
+    let hasConnectedBefore = false;
+
+    const stopHeartbeat = () => {
+      if (heartbeatTimer) {
+        clearInterval(heartbeatTimer);
+        heartbeatTimer = null;
       }
-      setWsStatus("connected");
     };
-    ws.onclose = () => setWsStatus("disconnected");
-    ws.onmessage = (e) => {
+
+    const connect = () => {
+      if (!shouldConnect) return;
+      const url = getChatWsUrl(sessionUuid);
+      let socket;
       try {
-        const frame = JSON.parse(e.data);
-        if (frame.event === "message_created") {
-          setMessages((prev) => {
-            const exists = prev.some((m) => m.id === frame.message?.id);
-            return exists ? prev : [...prev, frame.message];
-          });
+        socket = new WebSocket(url);
+      } catch {
+        scheduleReconnect();
+        return;
+      }
+      ws = socket;
+      wsRef.current = socket;
+      setWsStatus(hasConnectedBefore ? "reconnecting" : "connecting");
+
+      socket.onopen = () => {
+        if (wsRef.current !== socket) return;
+        // Authenticate via the frame body (not the URL) - keeps the JWT out
+        // of access logs / history. Backend reads this as the first frame.
+        try {
+          socket.send(JSON.stringify({ type: "auth", token }));
+        } catch {
+          // send failure → server times out and closes; onclose handles it.
         }
-      } catch {
-        // malformed frame - ignore, next frame may be valid
-      }
+        reconnectDelay = 3000;
+        if (hasConnectedBefore) {
+          // Reconnected after a drop - the per-conversation room has no
+          // message queue/resend of its own, so backfill anything the
+          // customer/agent sent while this socket was down.
+          fetchMessages();
+        }
+        hasConnectedBefore = true;
+        stopHeartbeat();
+        heartbeatTimer = setInterval(() => {
+          if (wsRef.current === socket && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({ event: "ping" }));
+          }
+        }, 25000);
+        setWsStatus("connected");
+      };
+      socket.onmessage = (e) => {
+        if (wsRef.current !== socket) return;
+        try {
+          const frame = JSON.parse(e.data);
+          if (frame.event === "message_created") {
+            setMessages((prev) => {
+              const exists = prev.some((m) => m.id === frame.message?.id);
+              return exists ? prev : [...prev, frame.message];
+            });
+          }
+        } catch {
+          // malformed frame - ignore, next frame may be valid
+        }
+      };
+      socket.onerror = () => {
+        // Do NOT close() here - if the socket is still CONNECTING (e.g. the
+        // server rejected the upgrade due to an expired token), calling
+        // close() produces Chrome's "WebSocket is closed before the
+        // connection is established" console error. The browser fires
+        // onclose next regardless, which drives the reconnect.
+      };
+      socket.onclose = () => {
+        if (wsRef.current !== socket) return;
+        wsRef.current = null;
+        stopHeartbeat();
+        if (shouldConnect) {
+          setWsStatus("disconnected");
+          scheduleReconnect();
+        }
+      };
     };
 
-    return () => ws.close();
-  }, [sessionUuid, token]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+    const scheduleReconnect = () => {
+      if (!shouldConnect) return;
+      reconnectTimer = setTimeout(() => {
+        reconnectDelay = Math.min(reconnectDelay * 1.5, 30000);
+        connect();
+      }, reconnectDelay);
+    };
+
+    connect();
+
+    return () => {
+      shouldConnect = false;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      stopHeartbeat();
+      if (ws && ws.readyState !== WebSocket.CONNECTING) ws.close();
+      wsRef.current = null;
+    };
+  }, [sessionUuid, token, fetchMessages]);
 
   const sendReply = async () => {
     const text = reply.trim();
@@ -304,9 +382,13 @@ export default function ConversationView({ session, onRefresh, onResolve, onBack
                 </span>
               )}
               <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                wsStatus === "connected" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                wsStatus === "connected"
+                  ? "bg-green-100 text-green-700"
+                  : wsStatus === "reconnecting"
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-gray-100 text-gray-500"
               }`}>
-                {wsStatus === "connected" ? "Live" : "Offline"}
+                {wsStatus === "connected" ? "Live" : wsStatus === "reconnecting" ? "Reconnecting…" : "Offline"}
               </span>
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5 truncate">Session: {session.uuid?.slice(0, 8)}…</p>

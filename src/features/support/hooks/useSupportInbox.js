@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { extractErrorMessage } from "../../../utils/formatters.js";
 import { confirmDialog, notifyError } from "../../../services/dialogService.js";
 import { filterInboxItems } from "../utils/supportUtils.js";
@@ -28,6 +28,32 @@ export default function useSupportInbox() {
 
   useEffect(() => {
     fetchInbox();
+  }, [fetchInbox]);
+
+  // Live inbox: previously the only way a new/escalated/resolved chat
+  // session ever showed up here was a manual Refresh click or a full page
+  // reload - a support team relying on this as their queue view could sit
+  // on a stale list indefinitely. The backend now fires
+  // fire_event("admin", "CHAT_SESSION_UPDATED", ...) on every session
+  // status change (escalate/assign/resolve - see handoff_service.py /
+  // chat_v2.py), which adminWsService.js already forwards as a
+  // bmd:CHAT_SESSION_UPDATED window CustomEvent over its existing always-
+  // open /ws connection - no new socket needed here. A sweep can touch
+  // several sessions in one call, so debounce bursts into a single refetch
+  // rather than firing fetchInbox() once per event.
+  const debounceTimerRef = useRef(null);
+  useEffect(() => {
+    const handler = () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = setTimeout(() => {
+        fetchInbox();
+      }, 500);
+    };
+    window.addEventListener("bmd:CHAT_SESSION_UPDATED", handler);
+    return () => {
+      window.removeEventListener("bmd:CHAT_SESSION_UPDATED", handler);
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    };
   }, [fetchInbox]);
 
   // Reset to page 1 when the filter/search signature changes - done during
