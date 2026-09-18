@@ -250,6 +250,7 @@ export const ROUTE_PERMISSION_MAP = {
   "/ordersdetails": MODULES.ORDERS,
   "/addorder": MODULES.ORDERS,
   "/orders/:id": MODULES.ORDERS,
+  "/reviews": MODULES.ORDERS,
   // Kept registered (route still exists in App.jsx for any stale deep
   // links) even though Layout.jsx no longer links to it - removed from nav
   // per product decision (order management/queue overlap resolved by
