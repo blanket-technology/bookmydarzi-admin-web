@@ -210,7 +210,7 @@ export default function CatalogTree({
                       </p>
                       <ServiceList
                         services={directServices}
-                        parent={{ categoryId: cat.id, lineId: null, lineName: null }}
+                        parent={{ categoryId: cat.id, catName: cat.name, lineId: null, lineName: null }}
                         onEditService={onEditService}
                         onDeleteService={onDeleteService}
                         onRestoreService={onRestoreService}
@@ -330,7 +330,7 @@ function ServiceLineList({
               <div className="border-t border-gray-100 bg-gray-50/70 px-2.5 sm:px-3 py-2.5">
                 <ServiceList
                   services={services}
-                  parent={{ categoryId: category.id, lineId: line.id, lineName: line.name }}
+                  parent={{ categoryId: category.id, catName: category.name, lineId: line.id, lineName: line.name }}
                   onEditService={onEditService}
                   onDeleteService={onDeleteService}
                   onRestoreService={onRestoreService}

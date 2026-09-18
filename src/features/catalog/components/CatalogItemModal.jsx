@@ -50,6 +50,11 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
   const showAddonsTab = isService && isEdit;
   const [tab, setTab] = useState("details");
 
+  // Repair/Resize/Restyle grouping only means anything for a service under
+  // Custom Alterations - every other category's services are a stitching
+  // tier or product variant, not alteration work on an existing garment.
+  const isAlterationsCategory = isService && parent?.catName === "Custom Alterations";
+
   const [form, setForm] = useState({
     name: initial?.name ?? "",
     description: initial?.description ?? "",
@@ -59,6 +64,7 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
     base_price: initial?.base_price ?? 0,
     estimated_delivery_days: initial?.estimated_delivery_days ?? 7,
     is_premium: initial?.is_premium ?? false,
+    alteration_group: initial?.alteration_group ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -119,6 +125,7 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
           is_premium: !!form.is_premium,
           category_id: Number(parent.categoryId),
           service_line_id: parent.lineId ? Number(parent.lineId) : null,
+          alteration_group: isAlterationsCategory && form.alteration_group ? form.alteration_group : null,
         };
         const res = isEdit
           ? await catalogService.updateService(initial.service_id, payload)
@@ -211,6 +218,20 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
             Premium <span className="text-xs text-gray-400 font-normal">(routes directly to Premium Hub)</span>
           </span>
         </label>
+      )}
+
+      {isAlterationsCategory && (
+        <Field label="Alteration Type">
+          <select className={inp} value={form.alteration_group} onChange={(e) => set("alteration_group", e.target.value)}>
+            <option value="">Not set (customer app falls back to guessing from the name)</option>
+            <option value="repair">Repair</option>
+            <option value="resize">Resize</option>
+            <option value="restyle">Restyle</option>
+          </select>
+          <p className="mt-1 text-xs text-gray-400">
+            Controls which group (Repair / Resize / Restyle) this shows under on the customer app and website.
+          </p>
+        </Field>
       )}
     </FormModal>
   );
