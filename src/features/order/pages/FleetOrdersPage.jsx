@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, RefreshCw, Truck, PackageCheck } from "lucide-react";
+import { Search, RefreshCw, Truck, PackageCheck, MapPin, Phone, Clock } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader";
 import DataTable from "../../../components/common/DataTable";
 import StatusBadge from "../../../components/common/StatusBadge";
@@ -19,7 +19,7 @@ import { useDebouncedValue } from "../../../hooks/useDebouncedValue.js";
 // to me" broadcast screens (bmdadmin's Deliveries/Pickups), which have no
 // admin equivalent because that's an individual employee's own job queue,
 // not something an admin browses.
-export default function FleetOrdersPage({ title, statuses, employeeField, icon: Icon, emptyLabel }) {
+export default function FleetOrdersPage({ title, statuses, employeeField, icon: Icon, emptyLabel, scheduleLabel }) {
   const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [total, setTotal] = useState(0);
@@ -123,8 +123,11 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
         columns={[
           { key: "code", label: "Order" },
           { key: "customer", label: "Customer" },
+          { key: "location", label: "Location" },
           { key: "status", label: "Status" },
+          { key: "schedule", label: scheduleLabel },
           { key: "employee", label: "Assigned To" },
+          { key: "payment", label: "Payment" },
           { key: "amount", label: "Amount", align: "right" },
           { key: "created", label: "Created" },
         ]}
@@ -134,7 +137,13 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
         emptyMessage={search ? "No matching orders." : emptyLabel}
         pagination={{ page, total, limit, onPageChange: setPage, onLimitChange: (l) => { setLimit(l); setPage(1); } }}
         showSerialNumber
-        renderRow={(o) => (
+        renderRow={(o) => {
+          // COD needs cash collected on-site - the single fact a Bridge
+          // employee/support agent most needs to see before heading out or
+          // fielding a call about this order, so it's surfaced as its own
+          // column rather than buried inside a generic payment-status pill.
+          const isCod = o.SettlementStatus === "cod_pending";
+          return (
           <tr
             key={o.Id}
             onClick={() => navigate(`/orders/${o.Id}`, { state: { order: o } })}
@@ -143,9 +152,39 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
             <td className="px-4 py-2.5 font-mono font-semibold text-teal-700 whitespace-nowrap">{o.OrderCode || `#${o.Id}`}</td>
             <td className="px-4 py-2.5">
               <div className="font-semibold text-gray-800">{o.address?.full_name || `Customer #${o.CustomerId}`}</div>
-              {o.address?.mobile && <div className="text-gray-400 text-xs">{o.address.mobile}</div>}
+              {o.address?.mobile && (
+                <a
+                  href={`tel:${o.address.mobile}`}
+                  onClick={(e) => e.stopPropagation()}
+                  className="mt-0.5 inline-flex items-center gap-1 text-xs text-teal-700 hover:underline"
+                >
+                  <Phone size={11} /> {o.address.mobile}
+                </a>
+              )}
             </td>
-            <td className="px-4 py-2.5"><StatusBadge status={o.Status} dot /></td>
+            <td className="px-4 py-2.5 max-w-[180px]">
+              {o.address?.city || o.address?.pincode ? (
+                <div className="flex items-start gap-1 text-xs text-gray-600">
+                  <MapPin size={12} className="mt-0.5 shrink-0 text-gray-400" />
+                  <span className="truncate" title={[o.address?.city, o.address?.pincode].filter(Boolean).join(" – ")}>
+                    {[o.address?.city, o.address?.pincode].filter(Boolean).join(" – ")}
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-300">—</span>
+              )}
+            </td>
+            <td className="px-4 py-2.5"><StatusBadge status={o.Status} label={o.StatusLabel} dot /></td>
+            <td className="px-4 py-2.5 text-xs">
+              {o.PickupTimeSlot || o.DisplayEta ? (
+                <span className="inline-flex items-center gap-1 text-gray-700">
+                  <Clock size={12} className="text-gray-400" />
+                  {o.PickupTimeSlot || o.DisplayEta}
+                </span>
+              ) : (
+                <span className="text-gray-300">—</span>
+              )}
+            </td>
             <td className="px-4 py-2.5">
               {o[employeeField] ? (
                 <span className="font-semibold text-gray-800">
@@ -155,10 +194,20 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
                 <span className="text-rose-600 font-semibold">Unassigned</span>
               )}
             </td>
+            <td className="px-4 py-2.5">
+              {isCod ? (
+                <span className="inline-flex items-center rounded-full bg-orange-100 px-2 py-0.5 text-xs font-semibold text-orange-700">
+                  COD – collect {formatCurrency(o.RemainingAmount ?? o.FinalAmount)}
+                </span>
+              ) : (
+                <StatusBadge status={o.SettlementStatus} label={o.PaymentStatusLabel} />
+              )}
+            </td>
             <td className="px-4 py-2.5 text-right font-mono">{formatCurrency(o.FinalAmount)}</td>
             <td className="px-4 py-2.5 text-gray-400 whitespace-nowrap">{formatDateTime(o.CreatedAt)}</td>
           </tr>
-        )}
+          );
+        }}
       />
     </div>
   );
@@ -172,6 +221,7 @@ export function DeliveriesPage() {
       employeeField="DeliveryEmployeeId"
       icon={Truck}
       emptyLabel="No deliveries in progress right now."
+      scheduleLabel="ETA"
     />
   );
 }
@@ -184,6 +234,7 @@ export function PickupsPage() {
       employeeField="AssignedEmployeeId"
       icon={PackageCheck}
       emptyLabel="No pickups in progress right now."
+      scheduleLabel="Pickup Slot"
     />
   );
 }

@@ -26,13 +26,37 @@ const COLORS = {
   in_progress:      "bg-blue-100 text-blue-700",
   resolved:         "bg-emerald-100 text-emerald-700",
   closed:           "bg-gray-100 text-gray-600",
-  // Order statuses
+  // Order statuses - full OrderStatus.ALL lifecycle (order_status.py) so
+  // every real status gets its own colour instead of silently falling
+  // back to flat gray. Grouped by stage so the colour progression itself
+  // reads as "how far along" at a glance: amber (needs action/waiting) ->
+  // blue (in motion / scheduled) -> indigo (assigned/broadcasting) ->
+  // teal (garment physically moving) -> emerald (done) -> rose (failed/
+  // cancelled).
+  pending_payment:  "bg-amber-100 text-amber-700",
+  payment_failed:   "bg-rose-100 text-rose-700",
+  order_placed:     "bg-blue-100 text-blue-700",
   created:          "bg-gray-100 text-gray-600",
   confirmed:        "bg-blue-100 text-blue-700",
+  order_accepted:   "bg-blue-100 text-blue-700",
+  order_rejected:   "bg-rose-100 text-rose-700",
+  searching_tailor: "bg-indigo-100 text-indigo-700",
+  broadcasted:      "bg-indigo-100 text-indigo-700",
+  tailor_assigned:  "bg-indigo-100 text-indigo-700",
   assigned:         "bg-indigo-100 text-indigo-700",
+  pickup_scheduled: "bg-blue-100 text-blue-700",
+  pickup_pending:   "bg-amber-100 text-amber-700",
+  picked_up:        "bg-teal-100 text-teal-700",
+  cloth_received_by_tailor: "bg-teal-100 text-teal-700",
+  stitching_started: "bg-indigo-100 text-indigo-700",
+  // in_progress already defined above (Support tickets) - shared as-is;
+  // "actively being worked on" reads fine in blue for order stitching too.
+  final_check:      "bg-amber-100 text-amber-700",
+  ready_for_dispatch: "bg-blue-100 text-blue-700",
+  out_for_delivery: "bg-teal-100 text-teal-700",
+  delivered:        "bg-teal-100 text-teal-700",
   completed:        "bg-emerald-100 text-emerald-700",
   cancelled:        "bg-rose-100 text-rose-700",
-  delivered:        "bg-teal-100 text-teal-700",
   return_pending:   "bg-amber-100 text-amber-700",
   return_scheduled: "bg-blue-100 text-blue-700",
   return_in_transit: "bg-indigo-100 text-indigo-700",
