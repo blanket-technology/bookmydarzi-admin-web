@@ -59,6 +59,7 @@ export default function CatalogTree({
       return next;
     });
   };
+  
 
   const inactiveCategoryCount = countInactive(categories);
   const inactiveLineCount = categories.reduce((n, c) => n + countInactive(c.service_lines || []), 0);

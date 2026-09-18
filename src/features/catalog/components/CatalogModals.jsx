@@ -63,6 +63,7 @@ export default function CatalogModals({
           onSaved={refresh}
         />
       )}
+      
       {modal.type === "delete-service" && (
         <ConfirmDelete message={`Delete item "${modal.data.name}"?`} onConfirm={handleDeleteService} onClose={closeModal} loading={deleting} />
       )}
