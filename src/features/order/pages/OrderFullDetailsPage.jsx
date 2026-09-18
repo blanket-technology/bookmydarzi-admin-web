@@ -793,9 +793,12 @@ export default function OrderFullDetailsPage() {
               title="Order Details"
               accent={theme.accent}
               right={
-                order.CreatedAt ? (
-                  <span className="text-[11px] text-gray-400">Ordered {formatDateTime(order.CreatedAt)}</span>
-                ) : null
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="text-[11px] font-mono text-gray-400">Order ID: {order.Id}</span>
+                  {order.CreatedAt && (
+                    <span className="text-[11px] text-gray-400">Ordered {formatDateTime(order.CreatedAt)}</span>
+                  )}
+                </div>
               }
             >
               {/* Ordered items - each with its catalog image, name & quantity */}
@@ -1639,8 +1642,8 @@ export default function OrderFullDetailsPage() {
                       {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
                     </option>
                     {bridgeEmployees.map((e) => (
-                      <option key={e.employee_id} value={e.employee_id}>
-                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      <option key={e.employee_id} value={e.employee_id} disabled={!e.is_online}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline, cannot assign"}
                       </option>
                     ))}
                   </select>
@@ -1650,6 +1653,11 @@ export default function OrderFullDetailsPage() {
                   {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
                     <span className="block mt-1 text-xs text-amber-600">
                       No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length > 0 && bridgeEmployees.every((e) => !e.is_online) && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No Bridge employees are currently online - assignment is blocked until someone comes online.
                     </span>
                   )}
                 </div>
@@ -1665,8 +1673,8 @@ export default function OrderFullDetailsPage() {
                       {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
                     </option>
                     {bridgeEmployees.map((e) => (
-                      <option key={e.employee_id} value={e.employee_id}>
-                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline"}
+                      <option key={e.employee_id} value={e.employee_id} disabled={!e.is_online}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline, cannot assign"}
                       </option>
                     ))}
                   </select>
@@ -1676,6 +1684,11 @@ export default function OrderFullDetailsPage() {
                   {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
                     <span className="block mt-1 text-xs text-amber-600">
                       No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length > 0 && bridgeEmployees.every((e) => !e.is_online) && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No Bridge employees are currently online - assignment is blocked until someone comes online.
                     </span>
                   )}
                 </div>
