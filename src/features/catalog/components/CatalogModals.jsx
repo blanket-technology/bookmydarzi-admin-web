@@ -49,7 +49,7 @@ export default function CatalogModals({
         <CatalogItemModal
           level="service"
           initial={modal.prefillName ? { name: modal.prefillName, base_price: 0, is_active: true, is_premium: false, display_order: 0, estimated_delivery_days: 7 } : undefined}
-          parent={{ categoryId: modal.categoryId, lineId: modal.lineId, lineName: modal.lineName }}
+          parent={{ categoryId: modal.categoryId, catName: modal.catName, lineId: modal.lineId, lineName: modal.lineName }}
           onClose={closeModal}
           onSaved={refresh}
         />
@@ -58,7 +58,7 @@ export default function CatalogModals({
         <CatalogItemModal
           level="service"
           initial={modal.data}
-          parent={{ categoryId: modal.data.category_id, lineId: modal.data.service_line_id, lineName: modal.lineName }}
+          parent={{ categoryId: modal.data.category_id, catName: modal.catName, lineId: modal.data.service_line_id, lineName: modal.lineName }}
           onClose={closeModal}
           onSaved={refresh}
         />

@@ -76,10 +76,11 @@ export default function CatalogPage() {
             onAddService={(cat, line) => setModal({
               type: "create-service",
               categoryId: cat.id,
+              catName: cat.name,
               lineId: line?.id ?? null,
               lineName: line?.name ?? null,
             })}
-            onEditService={(svc, parent) => setModal({ type: "edit-service", data: svc, lineName: parent.lineName })}
+            onEditService={(svc, parent) => setModal({ type: "edit-service", data: svc, catName: parent.catName, lineName: parent.lineName })}
             onDeleteService={(svc) => setModal({ type: "delete-service", data: svc })}
             onRestoreService={handleRestoreService}
             restoringId={restoringId}
