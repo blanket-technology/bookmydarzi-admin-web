@@ -37,6 +37,7 @@ import { SupportPage as InboxPage } from "../../features/support/index.js";
 import { CMSPage } from "../../features/cms/index.js";
 import { CancellationsPage } from "../../features/cancellations/index.js";
 import { LeaveRequestsPage } from "../../features/leave/index.js";
+import { ReviewsPage } from "../../features/reviews/index.js";
 import { NotificationsPage } from "../../features/notifications/index.js";
 import { ServiceAreasPage } from "../../features/service-areas/index.js";
 
@@ -80,6 +81,7 @@ export default function AppRouter() {
             <Route path="/cms" element={<CMSPage />} />
             <Route path="/cancellations" element={<CancellationsPage />} />
             <Route path="/leave-requests" element={<LeaveRequestsPage />} />
+            <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/service-areas" element={<ServiceAreasPage />} />
             <Route path="/notifications" element={<NotificationsPage />} />
           </Route>
