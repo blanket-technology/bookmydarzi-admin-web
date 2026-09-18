@@ -38,6 +38,12 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
   // ("AssignedEmployeeId" for Pickups, "DeliveryEmployeeId" for Deliveries)
   // - maps to the matching backend unassigned_field query param value.
   const unassignedField = employeeField === "DeliveryEmployeeId" ? "delivery_employee" : "employee";
+  // The backend already batch-loads and returns the matching *Name field
+  // alongside every *Id field (AssignedEmployeeName / DeliveryEmployeeName -
+  // see order_response_builder.py) precisely so the UI never has to show a
+  // bare numeric ID. This page was ignoring it and rendering "#35" instead
+  // of the employee's actual name.
+  const employeeNameField = employeeField === "DeliveryEmployeeId" ? "DeliveryEmployeeName" : "AssignedEmployeeName";
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -142,7 +148,9 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
             <td className="px-4 py-2.5"><StatusBadge status={o.Status} dot /></td>
             <td className="px-4 py-2.5">
               {o[employeeField] ? (
-                `#${o[employeeField]}`
+                <span className="font-semibold text-gray-800">
+                  {o[employeeNameField] || `Employee #${o[employeeField]}`}
+                </span>
               ) : (
                 <span className="text-rose-600 font-semibold">Unassigned</span>
               )}
