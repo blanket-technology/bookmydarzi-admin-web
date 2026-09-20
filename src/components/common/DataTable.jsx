@@ -1,6 +1,7 @@
-import { cloneElement } from "react";
-import { Loader2 } from "lucide-react";
+import { cloneElement, useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 import Pagination from "./Pagination";
+import { applySort, nextSortState } from "../../utils/tableSort.js";
 
 // Prepends a serial-number <td> as the first cell of the <tr> a page's
 // renderRow already built, rather than requiring every caller to add it
@@ -17,21 +18,34 @@ function withSerialCell(trElement, serial) {
   });
 }
 
+function SortIcon({ direction }) {
+  if (direction === "asc") return <ArrowUp size={12} className="shrink-0" />;
+  if (direction === "desc") return <ArrowDown size={12} className="shrink-0" />;
+  return <ArrowUpDown size={12} className="shrink-0 opacity-40" />;
+}
+
 /**
  * DataTable - shared table shell (header bar, loading state, empty state,
- * row rendering, pagination) used across every management list (Users,
- * Bridge, Tailors, ...). Standardizes the teal `brand` header, row density,
- * and loading/empty states that were previously hand-rolled per page with
- * drift (different colspans, different empty-state copy, some pages missing
- * pagination entirely).
+ * row rendering, pagination, column sorting) used across every management
+ * list (Users, Bridge, Tailors, ...). Standardizes the teal `brand` header,
+ * row density, and loading/empty states that were previously hand-rolled per
+ * page with drift (different colspans, different empty-state copy, some
+ * pages missing pagination entirely).
  *
  * Deliberately thin: it owns layout, not data-fetching or business logic -
  * each page still owns its own search/filter state and passes the already-
  * filtered `rows` in. Row content is fully caller-controlled via `renderRow`
  * so pages keep their own bespoke action buttons/badges.
  *
+ * Sorting is client-side over whatever `rows` currently holds (the current
+ * page's worth of data, same as Excel sorting a visible range) - a column
+ * opts in with `sortAccessor`, a function reading whatever value that column
+ * actually displays off the row (column `key`s often don't map 1:1 to a row
+ * field, e.g. "chevron"/"verification", so this can't be auto-derived from
+ * `key` alone).
+ *
  * Props:
- *   columns      {Array<{ key, label, align?, className? }>}
+ *   columns      {Array<{ key, label, align?, className?, sortAccessor?: (row) => string|number|Date|null }>}
  *   rows         {Array}    already paginated/filtered data for this page
  *   renderRow    {(row, index) => ReactNode}  must return a single <tr>
  *   rowKey       {(row) => string|number}     defaults to row.id ?? row.Id
@@ -64,22 +78,52 @@ export default function DataTable({
   const getKey = rowKey ?? ((row) => row.id ?? row.Id);
   const rowOffset = pagination ? (Math.max(1, pagination.page) - 1) * pagination.limit : 0;
 
+  // { key, direction: "asc" | "desc" } | null - null means "no sort applied,
+  // show rows in the order the caller passed them in".
+  const [sort, setSort] = useState(null);
+
+  const toggleSort = (col) => {
+    if (!col.sortAccessor) return;
+    setSort((prev) => nextSortState(prev, col.key));
+  };
+
+  const sortedRows = useMemo(() => {
+    const col = sort ? displayColumns.find((c) => c.key === sort.key) : null;
+    return applySort(rows, sort, col?.sortAccessor);
+  }, [rows, sort, displayColumns]);
+
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="bg-brand text-white">
             <tr>
-              {displayColumns.map((col) => (
-                <th
-                  key={col.key}
-                  className={`px-4 py-3 font-semibold ${
-                    col.align === "center" ? "text-center" : col.align === "right" ? "text-right" : "text-left"
-                  } ${col.className ?? ""}`}
-                >
-                  {col.label}
-                </th>
-              ))}
+              {displayColumns.map((col) => {
+                const sortable = !!col.sortAccessor;
+                const active = sort?.key === col.key;
+                return (
+                  <th
+                    key={col.key}
+                    onClick={sortable ? () => toggleSort(col) : undefined}
+                    className={`px-4 py-3 font-semibold ${
+                      col.align === "center" ? "text-center" : col.align === "right" ? "text-right" : "text-left"
+                    } ${col.className ?? ""} ${sortable ? "cursor-pointer select-none hover:bg-white/10 transition-colors" : ""}`}
+                  >
+                    {sortable ? (
+                      <span
+                        className={`inline-flex items-center gap-1 ${
+                          col.align === "center" ? "justify-center" : col.align === "right" ? "justify-end" : ""
+                        }`}
+                      >
+                        {col.label}
+                        <SortIcon direction={active ? sort.direction : null} />
+                      </span>
+                    ) : (
+                      col.label
+                    )}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-50">
@@ -101,7 +145,7 @@ export default function DataTable({
                 </td>
               </tr>
             ) : (
-              rows.map((row, i) => (
+              sortedRows.map((row, i) => (
                 <SafeRow key={getKey(row) ?? i}>
                   {showSerialNumber
                     ? withSerialCell(renderRow(row, i), rowOffset + i + 1)

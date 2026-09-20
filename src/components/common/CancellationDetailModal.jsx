@@ -94,9 +94,31 @@ export default function CancellationDetailModal({ cancellationId, onClose, onRef
 
   const effectiveRefund = overrideAmt ? parseFloat(overrideAmt) : (item.OverrideRefundAmount ?? item.RefundAmount);
 
+  // Mirrors backend's CancellationApproveRequest/PatchRequest.
+  // override_refund_amount (app/schemas/cancellation.py: Field(None, gt=0))
+  // - previously only the upper bound (vs PaidAmount) was checked
+  // client-side; a 0 or negative override typed directly into the number
+  // input reached the API and 422'd instead of being caught here.
+  function validateOverrideAmount() {
+    if (!overrideAmt) return "";
+    const parsed = parseFloat(overrideAmt);
+    if (Number.isNaN(parsed) || parsed <= 0) return "Override refund must be a positive amount.";
+    if (parsed > (item.PaidAmount ?? 0)) return `Override refund cannot exceed the amount paid (${fmt(item.PaidAmount)}).`;
+    return "";
+  }
+
   async function act(action) {
-    if (action === "approve" && overrideAmt && parseFloat(overrideAmt) > (item.PaidAmount ?? 0)) {
-      setErr(`Override refund cannot exceed the amount paid (${fmt(item.PaidAmount)}).`);
+    // Mirrors backend's CancellationRejectRequest.admin_notes (app/schemas/
+    // cancellation.py: required, unlike Approve/Patch where it's Optional) -
+    // previously a blank Admin Notes field on a cancellation with no prior
+    // AdminNotes sent admin_notes: null on Reject, which 422'd.
+    if (action === "reject" && !notes.trim() && !item.AdminNotes) {
+      setErr("Notes are required to reject a cancellation.");
+      return;
+    }
+    const overrideError = validateOverrideAmount();
+    if (action === "approve" && overrideError) {
+      setErr(overrideError);
       return;
     }
     setBusy(action);
@@ -104,7 +126,7 @@ export default function CancellationDetailModal({ cancellationId, onClose, onRef
     try {
       const payload = action === "approve"
         ? { override_refund_amount: overrideAmt ? parseFloat(overrideAmt) : null, admin_notes: notes || null }
-        : { admin_notes: notes || item.AdminNotes };
+        : { admin_notes: notes.trim() || item.AdminNotes };
       await api.post(`/admin/cancellations/${item.Id}/${action}`, payload);
       onRefresh?.();
       onClose();
@@ -116,6 +138,11 @@ export default function CancellationDetailModal({ cancellationId, onClose, onRef
   }
 
   async function savePatch() {
+    const overrideError = validateOverrideAmount();
+    if (overrideError) {
+      setErr(overrideError);
+      return;
+    }
     setBusy("patch");
     setErr("");
     try {
@@ -162,7 +189,7 @@ export default function CancellationDetailModal({ cancellationId, onClose, onRef
           <div className="space-y-2">
             <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide">Override Refund Amount</label>
             <input
-              type="number" min={0} max={item.PaidAmount ?? undefined} step={0.01}
+              type="number" min={0.01} max={item.PaidAmount ?? undefined} step={0.01}
               placeholder={String(item.RefundAmount ?? 0)}
               className={inp}
               value={overrideAmt}

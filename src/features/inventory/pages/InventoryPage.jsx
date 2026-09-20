@@ -182,12 +182,17 @@ export default function InventoryPage() {
 
       <DataTable
         columns={[
-          { key: "name", label: "Name" },
-          { key: "category", label: "Category" },
-          { key: "quantity", label: "Quantity", align: "right" },
-          { key: "unit", label: "Unit" },
-          { key: "price", label: "Price / Unit", align: "right" },
-          { key: "value", label: "Total Value", align: "right" },
+          { key: "name", label: "Name", sortAccessor: (it) => it.Name || "" },
+          { key: "category", label: "Category", sortAccessor: (it) => it.Category || "" },
+          { key: "quantity", label: "Quantity", align: "right", sortAccessor: (it) => Number(it.Quantity) || 0 },
+          { key: "unit", label: "Unit", sortAccessor: (it) => it.Unit || "" },
+          { key: "price", label: "Price / Unit", align: "right", sortAccessor: (it) => Number(it.PricePerUnit) || 0 },
+          {
+            key: "value",
+            label: "Total Value",
+            align: "right",
+            sortAccessor: (it) => Number(it.Quantity || 0) * Number(it.PricePerUnit || 0),
+          },
           { key: "actions", label: "Actions", align: "center" },
         ]}
         rows={filtered.slice((page - 1) * limit, page * limit)}
