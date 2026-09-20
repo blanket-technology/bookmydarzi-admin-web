@@ -1,14 +1,13 @@
 import { create } from "zustand";
 import { extractErrorMessage } from "../../../utils/formatters.js";
-import { DEFAULT_TAILOR_PASSWORD, INIT_ADD_FORM, INIT_KYC } from "../constants/tailorConstants.js";
+import { INIT_ADD_FORM, INIT_KYC } from "../constants/tailorConstants.js";
 import { validators } from "../utils/tailorUtils.js";
-import { createTailorStaff, uploadTailorKyc } from "../services/tailorService.js";
+import { createTailorApplication } from "../services/tailorService.js";
 
 export const useAddTailorStore = create((set, get) => ({
   form: { ...INIT_ADD_FORM },
   errors: {},
   showErrors: false,
-  showPassword: false,
   kyc: { ...INIT_KYC },
 
   viewing: null,
@@ -29,20 +28,15 @@ export const useAddTailorStore = create((set, get) => ({
     })),
 
   setViewing: (viewing) => set({ viewing }),
-  setShowPassword: (showPassword) => set({ showPassword }),
   setStatus: (status) => set({ status }),
 
   validate: () => {
     const { form } = get();
     const errors = {};
-    ["full_name", "email", "phone", "specialization"].forEach((key) => {
+    ["full_name", "email", "phone"].forEach((key) => {
       const err = validators[key]?.(form[key]) || "";
       if (err) errors[key] = err;
     });
-    if (form.password) {
-      const err = validators.password(form.password);
-      if (err) errors.password = err;
-    }
     set({ errors, showErrors: true });
     return Object.keys(errors).length === 0;
   },
@@ -65,74 +59,34 @@ export const useAddTailorStore = create((set, get) => ({
     set({ loading: true, status: null, msg: "" });
 
     try {
-      const nameParts = form.full_name.trim().split(" ");
-      const payload = {
-        first_name: nameParts[0] || form.full_name,
-        last_name: nameParts.slice(1).join(" ") || ".",
-        email: form.email.trim(),
-        mobile: form.phone.trim(),
-        password: form.password.trim() || DEFAULT_TAILOR_PASSWORD,
-        role: "tailor",
-        is_active: true,
-        // The account must change this password on its first login - see
-        // MustChangePassword on the backend User model. Only true when the
-        // admin left the field blank and got the shared default password.
-        is_default_password: !form.password.trim(),
-        specialization: form.specialization.trim() || undefined,
-        experience: form.experience !== "" ? Number(form.experience) : undefined,
-        location: form.location.trim() || undefined,
-        bio: form.bio.trim() || undefined,
-      };
+      const fd = new FormData();
+      fd.append("full_name", form.full_name.trim());
+      fd.append("email", form.email.trim());
+      fd.append("phone", form.phone.trim());
+      if (form.address.trim()) fd.append("address", form.address.trim());
+      if (form.city.trim()) fd.append("city", form.city.trim());
+      if (form.state.trim()) fd.append("state", form.state.trim());
+      if (form.pincode.trim()) fd.append("pincode", form.pincode.trim());
+      if (form.specialization.trim()) fd.append("specialization", form.specialization.trim());
+      if (form.experience !== "") fd.append("experience_years", String(Number(form.experience)));
+      if (kyc.aadhaar_front) fd.append("aadhaar_front", kyc.aadhaar_front);
+      if (kyc.aadhaar_back) fd.append("aadhaar_back", kyc.aadhaar_back);
+      if (kyc.pan_card) fd.append("pan_card", kyc.pan_card);
 
-      const res = await createTailorStaff(payload);
-      const tailorId = res?.tailor_id;
-      const userCode = res?.user_code || "";
-
-      const kycEntries = Object.entries(kyc).filter(([, file]) => !!file);
-      let uploadedCount = 0;
-      if (tailorId && kycEntries.length > 0) {
-        const failures = [];
-        for (const [docKey, file] of kycEntries) {
-          try {
-            await uploadTailorKyc(tailorId, docKey, file);
-            uploadedCount += 1;
-          } catch (kycErr) {
-            failures.push(`${docKey}: ${extractErrorMessage(kycErr, "upload failed")}`);
-          }
-        }
-        if (failures.length > 0) {
-          set({
-            // Distinct from "success" - the account WAS created, but not
-            // everything the admin submitted succeeded, so this must not
-            // render identically to a clean success (see AddTailorPage.jsx).
-            status: "partial",
-            msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} However, some KYC documents failed to upload (${failures.join("; ")}). This tailor is Pending Verification - add the missing documents from their profile page.`,
-          });
-          reset();
-          set({ loading: false });
-          return;
-        }
-      }
-
-      // A new tailor is always created Pending Verification, regardless of
-      // how many KYC docs were attached here - verifying is a separate,
-      // deliberate admin action from the tailor's profile page, never
-      // automatic (matches the backend rule; see AddTailorPage.jsx's
-      // in-form hint for the same explanation shown before submit).
-      const verificationNote =
-        uploadedCount === 3
-          ? "All 3 KYC documents are attached - verify this tailor from their profile page when ready."
-          : `This tailor is Pending Verification (${uploadedCount}/3 KYC documents attached) - add the rest from their profile page before verifying.`;
+      const res = await createTailorApplication(fd);
 
       set({
         status: "success",
-        msg: `Tailor account created!${userCode ? ` ID: ${userCode}.` : ""} They can log in with ${form.email} and the password you set (or ${DEFAULT_TAILOR_PASSWORD} if left blank). ${verificationNote}`,
+        msg:
+          `Application submitted (${res.application_id ? `#${res.application_id}` : ""}).` +
+          " Review and approve it from the Tailor Applications tab to create the live account -" +
+          " the tailor will get a password-setup email once approved.",
       });
       reset();
     } catch (error) {
       set({
         status: "error",
-        msg: extractErrorMessage(error, "Failed to create tailor account. Please try again."),
+        msg: extractErrorMessage(error, "Failed to submit tailor application. Please try again."),
       });
     } finally {
       set({ loading: false });

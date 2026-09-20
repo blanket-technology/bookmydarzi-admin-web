@@ -31,12 +31,18 @@ export async function registerTailor(formData) {
   return response.data;
 }
 
-// Immediate admin-created tailor account (POST /admin/staff, role=tailor) -
-// distinct from registerTailor() above, which submits to the public
-// application queue instead. This is what the Add Tailor screen uses: the
-// account is live right away, same as Add Bridge/employee.
-export async function createTailorStaff(payload) {
-  const response = await api.post("/admin/staff", payload);
+// Admin "Add Tailor" fast-path - submits into the SAME TailorApplication
+// review queue registerTailor() (the public /tailor/apply form) uses,
+// instead of creating a live account immediately. Previously this called
+// POST /admin/staff (role=tailor), which created the User+Tailor rows on
+// the spot and never appeared in the Tailor Applications list - looking
+// like every admin-added tailor bypassed review entirely. Now every
+// tailor, self-applied or admin-added, is only ever created by approving
+// a pending application (see approveApplication below).
+export async function createTailorApplication(formData) {
+  const response = await api.post("/admin/tailor-applications", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
   return response.data;
 }
 

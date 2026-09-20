@@ -4,9 +4,6 @@ import {
   User,
   Mail,
   Phone,
-  Lock,
-  Eye,
-  EyeOff,
   CreditCard,
   FileText,
   Scissors,
@@ -21,13 +18,11 @@ import {
   ArrowLeft,
   Briefcase,
   MapPin,
-  Wand2,
   ChevronDown,
 } from "lucide-react";
 import { InputField } from "../../../components/common/FormFields.jsx";
 import SectionHeader from "../../../components/common/SectionHeader.jsx";
 import { KycCard, DocModal } from "../../../components/common/KycUpload.jsx";
-import { generatePassword } from "../../users/utils/userUtils.js";
 import useAddTailor from "../hooks/useAddTailor.js";
 
 export default function AddTailorPage() {
@@ -43,7 +38,6 @@ export default function AddTailorPage() {
     form,
     errors,
     showErrors,
-    showPassword,
     kyc,
     viewing,
     status,
@@ -53,7 +47,6 @@ export default function AddTailorPage() {
     onChange,
     setKyc,
     setViewing,
-    setShowPassword,
     setStatus,
     reset,
     submit,
@@ -83,8 +76,10 @@ export default function AddTailorPage() {
                 <UserPlus size={22} className="text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-white leading-tight">Register New Tailor</h2>
-                <p className="text-teal-100 text-xs mt-1">Create a tailor account with profile and KYC documents</p>
+                <h2 className="text-xl font-bold text-white leading-tight">Add New Tailor</h2>
+                <p className="text-teal-100 text-xs mt-1">
+                  Submits a tailor application for review - approve it from Tailor Applications to create the account
+                </p>
               </div>
             </div>
           </div>
@@ -121,7 +116,7 @@ export default function AddTailorPage() {
                   Details" (name/email/mobile/password), so both screens
                   collect login credentials identically. */}
               <div className="space-y-5">
-                <SectionHeader icon={User} title="Account Details" subtitle="Login credentials and contact information" />
+                <SectionHeader icon={User} title="Applicant Details" subtitle="Contact information for the application" />
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   <InputField
@@ -162,59 +157,30 @@ export default function AddTailorPage() {
                     placeholder="e.g. Bridal wear, Suits"
                     value={form.specialization}
                     onChange={onChange}
-                    error={errors.specialization}
-                    touched={showErrors}
+                    required={false}
+                    touched={false}
                   />
-                  <div className="sm:col-span-2 lg:col-span-1">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1 mb-1.5">
-                      Password
-                      <span className="text-gray-400 font-normal">(optional - defaults to Tailor@123)</span>
-                    </label>
-                    <div className="relative flex gap-2">
-                      <div className="relative flex-1">
-                        <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400">
-                          <Lock size={17} />
-                        </span>
-                        <input
-                          type={showPassword ? "text" : "password"}
-                          name="password"
-                          value={form.password}
-                          onChange={onChange}
-                          placeholder="Leave blank for default"
-                          autoComplete="off"
-                          className="w-full h-11 pl-11 pr-10 text-sm rounded-xl border-2 outline-none transition-all bg-gray-50 focus:bg-white placeholder:text-gray-400 border-gray-300 focus:border-[#006B6B]"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword((p) => !p)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                        >
-                          {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onChange({ target: { name: "password", value: generatePassword() } });
-                          setShowPassword(true);
-                        }}
-                        className="shrink-0 px-3 rounded-xl border-2 border-gray-200 text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 text-xs font-semibold"
-                        title="Generate a strong password"
-                      >
-                        <Wand2 size={13} /> Generate
-                      </button>
-                    </div>
-                    {showErrors && errors.password && (
-                      <p className="text-xs text-red-600 flex items-center gap-1 mt-1.5">
-                        <AlertCircle size={12} className="shrink-0" /> {errors.password}
-                      </p>
-                    )}
-                  </div>
+                  <InputField
+                    icon={MapPin}
+                    name="address"
+                    label="Address"
+                    placeholder="Street / area"
+                    value={form.address}
+                    onChange={onChange}
+                    required={false}
+                    touched={false}
+                  />
+                  <InputField
+                    icon={MapPin}
+                    name="city"
+                    label="City"
+                    placeholder="e.g. Bhopal"
+                    value={form.city}
+                    onChange={onChange}
+                    required={false}
+                    touched={false}
+                  />
                 </div>
-
-                <p className="text-xs text-gray-400 bg-gray-50 rounded-xl px-4 py-3 border border-gray-100">
-                  Password rules: min 6 characters, at least 1 uppercase letter, at least 1 number. The tailor should change their password after first login.
-                </p>
               </div>
 
               {/* Additional Details - genuinely optional (experience,
@@ -234,7 +200,7 @@ export default function AddTailorPage() {
                     </div>
                     <div>
                       <h3 className="font-bold text-gray-800 text-base leading-tight">Additional Details</h3>
-                      <p className="text-xs text-gray-400 mt-0.5">Optional - experience, location, bio. Can be filled in later.</p>
+                      <p className="text-xs text-gray-400 mt-0.5">Optional - experience, state, pincode. Can be filled in later.</p>
                     </div>
                   </div>
                   <ChevronDown
@@ -244,42 +210,39 @@ export default function AddTailorPage() {
                 </button>
 
                 {showProfessionalDetails && (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <InputField
-                        icon={Briefcase}
-                        name="experience"
-                        label="Experience (years)"
-                        placeholder="e.g. 5"
-                        type="number"
-                        value={form.experience}
-                        onChange={onChange}
-                        required={false}
-                        touched={false}
-                      />
-                      <InputField
-                        icon={MapPin}
-                        name="location"
-                        label="Service Location"
-                        placeholder="e.g. Sector 63, Noida"
-                        value={form.location}
-                        onChange={onChange}
-                        required={false}
-                        touched={false}
-                      />
-                    </div>
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-xs font-semibold text-gray-600">Bio</label>
-                      <textarea
-                        name="bio"
-                        rows={2}
-                        value={form.bio}
-                        onChange={onChange}
-                        placeholder="Short professional bio"
-                        className="w-full border-2 border-gray-300 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:border-[#006B6B] resize-none bg-gray-50 focus:bg-white transition-colors"
-                      />
-                    </div>
-                  </>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                    <InputField
+                      icon={Briefcase}
+                      name="experience"
+                      label="Experience (years)"
+                      placeholder="e.g. 5"
+                      type="number"
+                      value={form.experience}
+                      onChange={onChange}
+                      required={false}
+                      touched={false}
+                    />
+                    <InputField
+                      icon={MapPin}
+                      name="state"
+                      label="State"
+                      placeholder="e.g. MP"
+                      value={form.state}
+                      onChange={onChange}
+                      required={false}
+                      touched={false}
+                    />
+                    <InputField
+                      icon={MapPin}
+                      name="pincode"
+                      label="Pincode"
+                      placeholder="e.g. 462001"
+                      value={form.pincode}
+                      onChange={onChange}
+                      required={false}
+                      touched={false}
+                    />
+                  </div>
                 )}
               </div>
 
@@ -289,8 +252,8 @@ export default function AddTailorPage() {
               <div className="space-y-5">
                 <SectionHeader
                   icon={ShieldCheck}
-                  title="KYC Verification"
-                  subtitle="Optional - can also be uploaded later from the tailor's profile"
+                  title="KYC Documents"
+                  subtitle="Aadhaar (both sides) and PAN are required before this application can be approved - can also be added later from the application detail page"
                   badge={
                     <span className="text-xs font-bold px-3 py-1 rounded-full border border-amber-200 text-amber-600 bg-amber-50">
                       {kycCount}/3 uploaded
@@ -300,10 +263,21 @@ export default function AddTailorPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                   <KycCard
-                    label="Aadhar Card"
+                    label="Aadhaar Front"
                     icon={CreditCard}
-                    docKey="aadhar"
-                    pendingFile={kyc.aadhar}
+                    docKey="aadhaar_front"
+                    pendingFile={kyc.aadhaar_front}
+                    existingUrl={null}
+                    editMode
+                    onPickFile={(k, f) => setKyc((p) => ({ ...p, [k]: f }))}
+                    onView={(k) => kyc[k] && setViewing(kyc[k])}
+                    onClearPending={(k) => setKyc((p) => ({ ...p, [k]: null }))}
+                  />
+                  <KycCard
+                    label="Aadhaar Back"
+                    icon={CreditCard}
+                    docKey="aadhaar_back"
+                    pendingFile={kyc.aadhaar_back}
                     existingUrl={null}
                     editMode
                     onPickFile={(k, f) => setKyc((p) => ({ ...p, [k]: f }))}
@@ -321,34 +295,19 @@ export default function AddTailorPage() {
                     onView={(k) => kyc[k] && setViewing(kyc[k])}
                     onClearPending={(k) => setKyc((p) => ({ ...p, [k]: null }))}
                   />
-                  <KycCard
-                    label="Other Document"
-                    icon={FileText}
-                    docKey="other"
-                    pendingFile={kyc.other}
-                    existingUrl={null}
-                    editMode
-                    onPickFile={(k, f) => setKyc((p) => ({ ...p, [k]: f }))}
-                    onView={(k) => kyc[k] && setViewing(kyc[k])}
-                    onClearPending={(k) => setKyc((p) => ({ ...p, [k]: null }))}
-                  />
                 </div>
 
                 <div className="flex items-center gap-2 bg-[#FFF9E6] border border-[#FFEBA6] rounded-xl px-4 py-2.5">
                   <AlertCircle size={15} className="text-[#D99B00] shrink-0" />
                   <p className="text-xs text-[#805B00] font-medium">
-                    Accepted formats: JPG, PNG, PDF &nbsp;·&nbsp; Max 5 MB per file
+                    Accepted formats: JPG, PNG, PDF &nbsp;·&nbsp; Max 8 MB per file
                   </p>
                 </div>
 
-                {/* A tailor is never auto-verified on creation, even with
-                    all 3 documents attached here - verification is always a
-                    separate, deliberate admin action from the tailor's
-                    profile page (same rule the edit path enforces: is_approved
-                    can only flip false->true once all 3 KYC docs exist, and
-                    even then it's never automatic). Spelling that out here
-                    means the admin isn't surprised the new tailor shows
-                    "Pending Verification" immediately after creation. */}
+                {/* Submitting creates a PENDING TailorApplication only - no
+                    account exists yet. Approving it (Tailor Applications tab)
+                    is what actually creates the User+Tailor rows, same as
+                    any self-service applicant - see approve_tailor_application. */}
                 <div
                   className={`flex items-center gap-2 rounded-xl px-4 py-2.5 border ${
                     kycCount === 3
@@ -359,8 +318,8 @@ export default function AddTailorPage() {
                   <ShieldCheck size={15} className={`shrink-0 ${kycCount === 3 ? "text-emerald-500" : "text-gray-400"}`} />
                   <p className="text-xs font-medium">
                     {kycCount === 3
-                      ? "All 3 documents attached - this tailor is ready to be verified from their profile page after creation."
-                      : `${kycCount}/3 documents attached - this tailor will be created as Pending Verification. Upload all 3 documents before they can be verified.`}
+                      ? "All required documents attached - this application is ready to approve from the Tailor Applications tab."
+                      : `${kycCount}/3 documents attached - Aadhaar (front + back) and PAN are required before this application can be approved.`}
                   </p>
                 </div>
               </div>
@@ -380,7 +339,7 @@ export default function AddTailorPage() {
                   className="flex-1 h-11 px-8 bg-[#007A7A] hover:bg-[#006B6B] text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-teal-500/25 transition-all"
                 >
                   <UserPlus size={16} />
-                  {loading ? "Creating…" : "Create Tailor"}
+                  {loading ? "Submitting…" : "Submit Application"}
                 </button>
               </div>
             </form>

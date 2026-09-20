@@ -42,21 +42,27 @@ export const NON_TERMINAL_STATUSES = new Set([
   "stitching_started", "in_progress", "final_check", "ready_for_dispatch", "out_for_delivery",
 ]);
 
-// Add Tailor screen (POST /admin/staff, role=tailor) - immediate account
-// creation by an admin, distinct from the public /tailor/apply queue.
+// Add Tailor screen (POST /admin/tailor-applications) - admin fast-track
+// submission into the same TailorApplication review queue the public
+// /tailor/apply form uses. No login credentials are collected here anymore:
+// approve_tailor_application (same as the self-service flow) issues the
+// account and emails a password-setup OTP once an admin approves it.
 export const INIT_ADD_FORM = {
   full_name: "",
   email: "",
   phone: "",
-  password: "",
+  address: "",
+  city: "",
+  state: "",
+  pincode: "",
   specialization: "",
   experience: "",
-  location: "",
-  bio: "",
 };
 
-export const INIT_KYC = { aadhar: null, pan_card: null, other: null };
-export const DEFAULT_TAILOR_PASSWORD = "Tailor@123";
+// Matches TailorApplication's actual document fields (Aadhaar has separate
+// front/back images; there's no generic "other document" slot on an
+// application, unlike the live Tailor profile's KYC fields).
+export const INIT_KYC = { aadhaar_front: null, aadhaar_back: null, pan_card: null };
 
 export const APPLICATION_STATUS_COLOR = {
   approved: "bg-green-100 text-green-700",
