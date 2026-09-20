@@ -653,11 +653,13 @@ export default function OrderFullDetailsPage() {
   }, [pendingAction, loadTailors]);
 
   // Same idea for the workflow actions that now require picking a Bridge
-  // employee (Schedule Pickup when unclaimed, Assign Delivery Employee).
+  // employee (Schedule Pickup when unclaimed, Assign Delivery Employee,
+  // Assign Return Employee).
   useEffect(() => {
     if (
       pendingAction?.requiresInput?.includes("pickup_employee_id") ||
-      pendingAction?.requiresInput?.includes("delivery_employee_id")
+      pendingAction?.requiresInput?.includes("delivery_employee_id") ||
+      pendingAction?.requiresInput?.includes("return_employee_id")
     ) {
       loadBridgeEmployees();
     }
@@ -1668,6 +1670,37 @@ export default function OrderFullDetailsPage() {
                   <select
                     className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400"
                     onChange={(e) => setActionInput((p) => ({ ...p, delivery_employee_id: e.target.value }))}
+                  >
+                    <option value="">
+                      {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
+                    </option>
+                    {bridgeEmployees.map((e) => (
+                      <option key={e.employee_id} value={e.employee_id} disabled={!e.is_online}>
+                        {e.full_name || `Employee #${e.employee_id}`} (#{e.employee_id}){e.is_online ? "" : " - offline, cannot assign"}
+                      </option>
+                    ))}
+                  </select>
+                  {bridgeEmployeesError && (
+                    <span className="block mt-1 text-xs text-red-600">{bridgeEmployeesError}</span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length === 0 && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No active Bridge/employee accounts found - create one under Bridge before assigning.
+                    </span>
+                  )}
+                  {bridgeEmployeesLoaded && bridgeEmployees.length > 0 && bridgeEmployees.every((e) => !e.is_online) && (
+                    <span className="block mt-1 text-xs text-amber-600">
+                      No Bridge employees are currently online - assignment is blocked until someone comes online.
+                    </span>
+                  )}
+                </div>
+              )}
+              {pendingAction.requiresInput?.includes("return_employee_id") && (
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 block mb-1">Bridge Employee (Return)</label>
+                  <select
+                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-teal-400"
+                    onChange={(e) => setActionInput((p) => ({ ...p, return_employee_id: e.target.value }))}
                   >
                     <option value="">
                       {bridgeEmployeesLoaded ? "Select Bridge Employee…" : "Select Bridge Employee… (tap to load)"}
