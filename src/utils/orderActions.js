@@ -330,6 +330,25 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
+  // ── return_pending → manual return-employee assignment (same override
+  // lever as pickup/delivery above, for when nobody accepts the automatic
+  // return broadcast - return_broadcast_service.py's own module docstring
+  // explicitly noted this lever was missing entirely: a return stuck with
+  // no eligible employee accepting had only a deduped admin notification,
+  // no way for staff to force an assignment. Same underlying endpoint
+  // pattern (assign_bridge_service.py's new assign_return_employee). ──
+  if (status === ORDER_STATUS.RETURN_PENDING && (role === ROLE.EMPLOYEE || staff) && !order.ReturnEmployeeId) {
+    actions.push({
+      id: "assign_return_employee",
+      label: "Assign Return Employee",
+      endpoint: (o) => `/admin/orders/${o.Id}/assign-return-employee`,
+      method: "patch",
+      requiresInput: ["return_employee_id"],
+      bodyFromInput: (input) => ({ employee_id: Number(input.return_employee_id) }),
+      group: "secondary",
+    });
+  }
+
   // ── out_for_delivery → collect COD/balance payment (employee only, not tailor) ──
   if (status === ORDER_STATUS.OUT_FOR_DELIVERY && role === ROLE.EMPLOYEE && remaining > 0) {
     actions.push({
