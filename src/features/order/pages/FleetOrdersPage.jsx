@@ -121,15 +121,15 @@ export default function FleetOrdersPage({ title, statuses, employeeField, icon: 
 
       <DataTable
         columns={[
-          { key: "code", label: "Order" },
-          { key: "customer", label: "Customer" },
-          { key: "location", label: "Location" },
-          { key: "status", label: "Status" },
-          { key: "schedule", label: scheduleLabel },
-          { key: "employee", label: "Assigned To" },
-          { key: "payment", label: "Payment" },
-          { key: "amount", label: "Amount", align: "right" },
-          { key: "created", label: "Created" },
+          { key: "code", label: "Order", sortAccessor: (o) => o.OrderCode || `#${o.Id}` },
+          { key: "customer", label: "Customer", sortAccessor: (o) => o.address?.full_name || "" },
+          { key: "location", label: "Location", sortAccessor: (o) => o.address?.city || "" },
+          { key: "status", label: "Status", sortAccessor: (o) => o.StatusLabel || o.Status || "" },
+          { key: "schedule", label: scheduleLabel, sortAccessor: (o) => o.PickupTimeSlot || o.DisplayEta || "" },
+          { key: "employee", label: "Assigned To", sortAccessor: (o) => o[employeeNameField] || "" },
+          { key: "payment", label: "Payment", sortAccessor: (o) => o.PaymentStatusLabel || o.SettlementStatus || "" },
+          { key: "amount", label: "Amount", align: "right", sortAccessor: (o) => Number(o.FinalAmount) || 0 },
+          { key: "created", label: "Created", sortAccessor: (o) => (o.CreatedAt ? new Date(o.CreatedAt) : null) },
         ]}
         rows={orders}
         rowKey={(o) => o.Id}

@@ -69,12 +69,12 @@ export default function BridgeDetailsPage() {
 
         <DataTable
           columns={[
-            { key: "id", label: "Bridge ID" },
-            { key: "name", label: "Name" },
-            { key: "email", label: "Email" },
-            { key: "mobile", label: "Mobile" },
-            { key: "joined", label: "Joined" },
-            { key: "status", label: "Status", align: "center" },
+            { key: "id", label: "Bridge ID", sortAccessor: (s) => s.id },
+            { key: "name", label: "Name", sortAccessor: (s) => s.full_name || "" },
+            { key: "email", label: "Email", sortAccessor: (s) => s.email || "" },
+            { key: "mobile", label: "Mobile", sortAccessor: (s) => s.mobile || "" },
+            { key: "joined", label: "Joined", sortAccessor: (s) => (s.created_at ? new Date(s.created_at) : null) },
+            { key: "status", label: "Status", align: "center", sortAccessor: (s) => (s.is_active ? 1 : 0) },
             { key: "actions", label: "Actions", align: "center" },
           ]}
           rows={filtered.slice((page - 1) * limit, page * limit)}

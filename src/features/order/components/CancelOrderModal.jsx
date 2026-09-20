@@ -9,6 +9,12 @@ import { getAdminCancellationPreview, getOrderCancellationRecord } from "../serv
 // the old separate no-penalty/100%-refund force-cancel — this preview
 // mirrors what the customer would see for the same order/stage, plus an
 // admin-only waiver checkbox that zeroes the penalty for goodwill cancels.
+// Mirrors backend's AdminCancelOrderRequest.reason (app/schemas/
+// cancellation.py: min_length=5) - previously any non-empty reason
+// (even 1 char) enabled the Cancel Order button, and a too-short reason
+// 422'd with no field-level indication why.
+const MIN_REASON_LENGTH = 5;
+
 export default function CancelOrderModal({ order, onClose, onConfirm, submitting }) {
   const [reason, setReason] = useState("");
   const [waivePenalty, setWaivePenalty] = useState(false);
@@ -143,15 +149,18 @@ export default function CancelOrderModal({ order, onClose, onConfirm, submitting
           value={reason}
           onChange={(e) => setReason(e.target.value)}
           placeholder="Why is this order being cancelled?"
-          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-300 resize-none bg-gray-50 focus:bg-white transition-colors mb-4"
+          className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-300 resize-none bg-gray-50 focus:bg-white transition-colors"
         />
-        <div className="flex gap-3">
+        {reason.trim().length > 0 && reason.trim().length < MIN_REASON_LENGTH && (
+          <p className="text-xs text-rose-600 font-semibold mt-1 mb-3">Reason must be at least {MIN_REASON_LENGTH} characters.</p>
+        )}
+        <div className="flex gap-3 mt-4">
           <button onClick={onClose} disabled={submitting} className="flex-1 py-2.5 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-semibold hover:bg-gray-50">
             Keep Order
           </button>
           <button
             onClick={() => onConfirm(reason.trim(), waivePenalty)}
-            disabled={submitting || !reason.trim() || loadingPreview}
+            disabled={submitting || reason.trim().length < MIN_REASON_LENGTH || loadingPreview}
             className="flex-1 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-1.5"
           >
             {submitting && <Loader2 size={14} className="animate-spin" />}

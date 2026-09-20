@@ -1,8 +1,41 @@
-import { Loader2, RotateCcw, RefreshCw, SlidersHorizontal, ChevronRight, CreditCard } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2, RotateCcw, RefreshCw, SlidersHorizontal, ChevronRight, CreditCard } from "lucide-react";
 import StatusBadge from "../../../components/common/StatusBadge.jsx";
 import { paymentStatusLabel } from "../constants/paymentConstants.js";
+import { applySort, nextSortState } from "../../../utils/tableSort.js";
 
 const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "advance_pending"]);
+
+const SORT_ACCESSORS = {
+  order: (o) => o.OrderCode || o.OrderNumber || "",
+  service: (o) => o.ServiceTitle || "",
+  total: (o) => Number(o.FinalAmount) || 0,
+  balance: (o) => (o.BalanceDue ? Number(o.RemainingAmount) || 0 : -1),
+  status: (o) => paymentStatusLabel(o.SettlementStatus) || o.SettlementStatus || "",
+};
+
+function SortIcon({ direction }) {
+  if (direction === "asc") return <ArrowUp size={12} className="shrink-0" />;
+  if (direction === "desc") return <ArrowDown size={12} className="shrink-0" />;
+  return <ArrowUpDown size={12} className="shrink-0 opacity-40" />;
+}
+
+function SortableHeader({ label, sortKey, align, sort, onSort }) {
+  const active = sort?.key === sortKey;
+  return (
+    <th
+      onClick={() => onSort(sortKey)}
+      className={`px-4 py-3 font-semibold cursor-pointer select-none hover:bg-white/10 transition-colors ${
+        align === "right" ? "text-right" : "text-left"
+      }`}
+    >
+      <span className={`inline-flex items-center gap-1 ${align === "right" ? "justify-end" : ""}`}>
+        {label}
+        <SortIcon direction={active ? sort.direction : null} />
+      </span>
+    </th>
+  );
+}
 
 function IconButton({ onClick, title, tone, spinning, disabled, children }) {
   const tones = {
@@ -41,17 +74,24 @@ export default function PaymentsTable({
   const columnCount = (hasAnyAction ? 6 : 5) + 1; // +1 for S.No.
   const rowOffset = (Math.max(1, page) - 1) * limit;
 
+  const [sort, setSort] = useState(null);
+  const handleSort = (key) => setSort((prev) => nextSortState(prev, key));
+  const sortedOrders = useMemo(
+    () => applySort(orders, sort, sort ? SORT_ACCESSORS[sort.key] : undefined),
+    [orders, sort],
+  );
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-xs">
         <thead className="bg-brand text-white">
           <tr>
             <th className="px-4 py-3 text-center font-semibold">S.No.</th>
-            <th className="px-4 py-3 text-left font-semibold">Order</th>
-            <th className="px-4 py-3 text-left font-semibold">Service</th>
-            <th className="px-4 py-3 text-right font-semibold">Total</th>
-            <th className="px-4 py-3 text-right font-semibold">Balance Due</th>
-            <th className="px-4 py-3 text-left font-semibold">Payment Status</th>
+            <SortableHeader label="Order" sortKey="order" sort={sort} onSort={handleSort} />
+            <SortableHeader label="Service" sortKey="service" sort={sort} onSort={handleSort} />
+            <SortableHeader label="Total" sortKey="total" align="right" sort={sort} onSort={handleSort} />
+            <SortableHeader label="Balance Due" sortKey="balance" align="right" sort={sort} onSort={handleSort} />
+            <SortableHeader label="Payment Status" sortKey="status" sort={sort} onSort={handleSort} />
             {hasAnyAction && <th className="px-4 py-3 text-center font-semibold">Actions</th>}
           </tr>
         </thead>
@@ -68,7 +108,7 @@ export default function PaymentsTable({
               </td>
             </tr>
           ) : (
-            orders.map((order, i) => {
+            sortedOrders.map((order, i) => {
               const hasBalance = order.BalanceDue && Number(order.RemainingAmount) > 0;
               return (
                 <tr
