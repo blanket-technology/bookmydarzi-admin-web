@@ -133,9 +133,25 @@ function AdminPermissionEditor({ admin, onBack }) {
 
   const handleCellClick = async (screen, perm, state) => {
     try {
-      if (state === "revoked") await resetCell(admin, screen, perm);
-      else if (state === "none" || state === "granted-role") await grantCell(admin, screen, perm);
-      else await revokeCell(admin, screen, perm);
+      if (state === "revoked" || state === "granted-override") {
+        // Both already have an explicit per-account override row (a block,
+        // or an extra grant beyond the role default) - clearing it returns
+        // the account to its role default. Previously "granted-override"
+        // fell into the revokeCell branch below, which called
+        // revokePermission on a cell that already had a *grant* override -
+        // that doesn't clear the grant, it just adds a redundant revoke
+        // request on top of an existing grant row for the same screen+perm,
+        // leaving the account's access ambiguous instead of reset.
+        await resetCell(admin, screen, perm);
+      } else if (state === "none") {
+        await grantCell(admin, screen, perm);
+      } else {
+        // "granted-role": only a revoke is meaningful here - the role
+        // already grants this by default, so re-granting is a no-op.
+        // Previously this called grantCell, making it impossible to
+        // restrict one admin below their role's defaults from this screen.
+        await revokeCell(admin, screen, perm);
+      }
     } catch (err) {
       setUnlockMsg(extractErrorMessage(err, "Update failed."));
     }
@@ -187,9 +203,9 @@ function AdminPermissionEditor({ admin, onBack }) {
       <div className="bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 mb-4">
         <p className="text-xs text-blue-800 font-semibold mb-2">Click any cell in the table below to change it.</p>
         <div className="flex flex-wrap gap-x-5 gap-y-2 text-xs text-blue-800">
-          <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-500 shrink-0" />Allowed by their role - click to also grant it directly to this account</span>
-          <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-teal-600 shrink-0" />Granted specifically to this account - click to take it away</span>
-          <span className="flex items-center gap-1.5"><ShieldOff size={15} className="text-rose-500 shrink-0" />Blocked for this account only - click to clear the block</span>
+          <span className="flex items-center gap-1.5"><CheckCircle2 size={15} className="text-emerald-500 shrink-0" />Allowed by their role - click to block it for this account only</span>
+          <span className="flex items-center gap-1.5"><ShieldCheck size={15} className="text-teal-600 shrink-0" />Granted specifically to this account - click to reset to role default</span>
+          <span className="flex items-center gap-1.5"><ShieldOff size={15} className="text-rose-500 shrink-0" />Blocked for this account only - click to reset to role default</span>
           <span className="flex items-center gap-1.5"><Minus size={15} className="text-gray-400 shrink-0" />Not allowed - click to grant it</span>
         </div>
       </div>
