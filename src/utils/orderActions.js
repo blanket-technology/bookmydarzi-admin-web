@@ -349,6 +349,34 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
+  // ── return_scheduled → mark in transit (picked up from tailor, en route
+  // to customer) / return_in_transit → mark complete (handed back to
+  // customer). Same endpoints the assigned Bridge employee's own app
+  // already uses to self-progress their return job
+  // (employee.py's mark_return_in_transit/mark_return_complete, both
+  // already admin/superadmin-permitted server-side via _employee_only's
+  // role list, not actually employee-exclusive despite the name) - staff
+  // previously had no lever here at all once a return was assigned, a
+  // dead end matching the exact gap just fixed for assignment itself. ──
+  if (status === ORDER_STATUS.RETURN_SCHEDULED && (role === ROLE.EMPLOYEE || staff)) {
+    actions.push({
+      id: "mark_return_in_transit",
+      label: "Mark Return In Transit",
+      endpoint: (o) => `/employee/orders/${o.Id}/return/in-transit`,
+      method: "patch",
+      group: "primary",
+    });
+  }
+  if (status === ORDER_STATUS.RETURN_IN_TRANSIT && (role === ROLE.EMPLOYEE || staff)) {
+    actions.push({
+      id: "mark_return_complete",
+      label: "Mark Return Complete",
+      endpoint: (o) => `/employee/orders/${o.Id}/return/complete`,
+      method: "patch",
+      group: "primary",
+    });
+  }
+
   // ── out_for_delivery → collect COD/balance payment (employee only, not tailor) ──
   if (status === ORDER_STATUS.OUT_FOR_DELIVERY && role === ROLE.EMPLOYEE && remaining > 0) {
     actions.push({
