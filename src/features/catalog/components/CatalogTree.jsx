@@ -388,7 +388,11 @@ function ServiceList({ services, parent, onEditService, onDeleteService, onResto
             </button>
             <span className={`text-sm font-medium flex-1 min-w-0 truncate ${inactive ? "text-gray-400 line-through decoration-1" : "text-gray-700"}`}>{svc.name}</span>
             {svc.is_premium && <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 shrink-0">Premium</span>}
-            {svc.estimated_delivery_days != null && (
+            {svc.estimated_delivery_hours != null ? (
+              <span className="hidden sm:inline-flex items-center gap-0.5 text-[11px] text-gray-400 shrink-0">
+                <Truck size={10} /> {svc.estimated_delivery_hours}h
+              </span>
+            ) : svc.estimated_delivery_days != null && (
               <span className="hidden sm:inline-flex items-center gap-0.5 text-[11px] text-gray-400 shrink-0">
                 <Truck size={10} /> {svc.estimated_delivery_days}d
               </span>
