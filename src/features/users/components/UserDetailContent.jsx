@@ -14,6 +14,7 @@ import TicketModal from "../../../components/common/TicketModal.jsx";
 import CancellationDetailModal from "../../../components/common/CancellationDetailModal.jsx";
 import FactDetailModal from "../../../components/common/FactDetailModal.jsx";
 import ConversationView from "../../chat/components/ConversationView.jsx";
+import { resolveMediaUrl } from "../../../services/api.js";
 import { formatEntityId, formatDate, formatDateTime, formatCurrency } from "../../../utils/formatters.js";
 import { ORDER_STATUS_OPTIONS, ROLE_LABEL, TABS } from "../constants/userDetailConstants.js";
 
@@ -148,7 +149,7 @@ export default function UserDetailContent({
             avatar={
               <div className="w-20 h-20 rounded-2xl border-2 border-white/30 overflow-hidden bg-teal-600 shrink-0 flex items-center justify-center">
                 {user.ProfileImageUrl ? (
-                  <img src={user.ProfileImageUrl} alt={user.FullName} className="w-full h-full object-cover" />
+                  <img src={resolveMediaUrl(user.ProfileImageUrl)} alt={user.FullName} className="w-full h-full object-cover" />
                 ) : (
                   <UserCircle2 size={40} className="text-teal-200" />
                 )}

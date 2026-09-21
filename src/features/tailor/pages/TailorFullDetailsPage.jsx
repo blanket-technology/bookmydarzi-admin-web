@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import api from "../../../services/api";
+import api, { resolveMediaUrl } from "../../../services/api";
 import { extractErrorMessage, formatDate, formatDateTime, formatCurrency, formatTailorId } from "../../../utils/formatters";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Pagination from "../../../components/common/Pagination";
@@ -578,7 +578,7 @@ export default function TailorFullDetailsPage() {
               {photo ? (
                 <img src={URL.createObjectURL(photo)} alt="profile" className="w-full h-full object-cover" />
               ) : liveData.profile_image_url ? (
-                <img src={liveData.profile_image_url} alt="profile" className="w-full h-full object-cover" />
+                <img src={resolveMediaUrl(liveData.profile_image_url)} alt="profile" className="w-full h-full object-cover" />
               ) : (
                 <UserCircle2 size={40} className="text-teal-200" />
               )}
