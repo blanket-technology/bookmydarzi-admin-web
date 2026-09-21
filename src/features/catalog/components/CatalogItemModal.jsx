@@ -55,6 +55,11 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
   // tier or product variant, not alteration work on an existing garment.
   const isAlterationsCategory = isService && parent?.catName === "Custom Alterations";
 
+  // Delivery time is either whole days (the vast majority of services -
+  // full garment stitching, etc.) or, for a rush alteration, a handful of
+  // hours (6hr/12hr). Only one is ever active at once - unit tracks which
+  // mode is shown/submitted, defaulting to whichever the saved service
+  // actually has set.
   const [form, setForm] = useState({
     name: initial?.name ?? "",
     description: initial?.description ?? "",
@@ -62,7 +67,9 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
     display_order: initial?.display_order ?? 0,
     is_active: initial?.is_active ?? true,
     base_price: initial?.base_price ?? 0,
+    delivery_unit: initial?.estimated_delivery_hours ? "hours" : "days",
     estimated_delivery_days: initial?.estimated_delivery_days ?? 7,
+    estimated_delivery_hours: initial?.estimated_delivery_hours ?? 6,
     is_premium: initial?.is_premium ?? false,
     alteration_group: initial?.alteration_group ?? "",
   });
@@ -118,10 +125,18 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
           : await catalogService.createServiceLine(payload);
         onSaved(res);
       } else {
+        const useHours = form.delivery_unit === "hours";
         const payload = {
           ...base,
           base_price: Number(form.base_price),
-          estimated_delivery_days: Number(form.estimated_delivery_days),
+          // Only one of these is ever meaningful at a time - the backend
+          // treats estimated_delivery_hours as taking precedence over
+          // estimated_delivery_days whenever it's set (see
+          // app/services/orders/eta_service.py), so switching back to
+          // "Days" mode explicitly sends hours=null to clear any
+          // previously-set rush turnaround.
+          estimated_delivery_days: Number(form.estimated_delivery_days) || 7,
+          estimated_delivery_hours: useHours ? Number(form.estimated_delivery_hours) || null : null,
           is_premium: !!form.is_premium,
           category_id: Number(parent.categoryId),
           service_line_id: parent.lineId ? Number(parent.lineId) : null,
@@ -189,14 +204,56 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
       </Field>
 
       {isService && (
-        <div className="grid grid-cols-2 gap-3">
+        <>
           <Field label="Base Price (₹)" required>
             <input required type="number" min="0" className={inp} value={form.base_price} onChange={(e) => set("base_price", e.target.value)} />
           </Field>
-          <Field label="Delivery Days">
-            <input type="number" min="1" className={inp} value={form.estimated_delivery_days} onChange={(e) => set("estimated_delivery_days", e.target.value)} />
+          <Field label="Delivery Time">
+            <div className="flex gap-2">
+              <div className="flex rounded-xl bg-gray-100 p-1">
+                {[
+                  { id: "days", label: "Days" },
+                  { id: "hours", label: "Hours" },
+                ].map((opt) => (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => set("delivery_unit", opt.id)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap ${
+                      form.delivery_unit === opt.id ? "bg-white text-teal-700 shadow-sm" : "text-gray-500 hover:text-gray-700"
+                    }`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {form.delivery_unit === "hours" ? (
+                <input
+                  type="number"
+                  min="1"
+                  max="72"
+                  className={inp}
+                  value={form.estimated_delivery_hours}
+                  onChange={(e) => set("estimated_delivery_hours", e.target.value)}
+                  placeholder="e.g. 6, 12, 24"
+                />
+              ) : (
+                <input
+                  type="number"
+                  min="1"
+                  className={inp}
+                  value={form.estimated_delivery_days}
+                  onChange={(e) => set("estimated_delivery_days", e.target.value)}
+                />
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-400">
+              {form.delivery_unit === "hours"
+                ? "Rush turnaround (e.g. a 6-hour alteration) - shown to the customer as an exact same-day ETA."
+                : "Whole-day turnaround, used for most services (full garment stitching, etc.)."}
+            </p>
           </Field>
-        </div>
+        </>
       )}
 
       <div className="grid grid-cols-2 gap-3">
