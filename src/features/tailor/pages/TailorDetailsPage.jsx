@@ -41,12 +41,12 @@ function KpiCard({ icon: Icon, label, value, tone }) {
 }
 
 const TAILOR_TABLE_COLUMNS = [
-  { key: "id", label: "Tailor ID", sortAccessor: (t) => t.tailor_id },
-  { key: "name", label: "Name", sortAccessor: (t) => t.full_name || "" },
-  { key: "email", label: "Email", sortAccessor: (t) => t.email || "" },
-  { key: "mobile", label: "Mobile", sortAccessor: (t) => t.mobile || "" },
+  { key: "id", label: "Tailor ID" },
+  { key: "name", label: "Name" },
+  { key: "email", label: "Email" },
+  { key: "mobile", label: "Mobile" },
   { key: "joined", label: "Joined", sortAccessor: (t) => (t.created_at ? new Date(t.created_at) : null) },
-  { key: "status", label: "Status", align: "center", sortAccessor: (t) => (t.is_active ? 1 : 0) },
+  { key: "status", label: "Status", align: "center" },
 ];
 
 export default function TailorDetailsPage() {

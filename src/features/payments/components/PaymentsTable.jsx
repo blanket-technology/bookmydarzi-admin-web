@@ -6,12 +6,13 @@ import { applySort, nextSortState } from "../../../utils/tableSort.js";
 
 const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "advance_pending"]);
 
+// Only money columns are worth sorting here - Order/Service are identifiers/
+// labels an ops person scans, not orders, and Payment Status is already a
+// small, meaningful set of states best left in the order the backend
+// returns rather than alphabetized.
 const SORT_ACCESSORS = {
-  order: (o) => o.OrderCode || o.OrderNumber || "",
-  service: (o) => o.ServiceTitle || "",
   total: (o) => Number(o.FinalAmount) || 0,
   balance: (o) => (o.BalanceDue ? Number(o.RemainingAmount) || 0 : -1),
-  status: (o) => paymentStatusLabel(o.SettlementStatus) || o.SettlementStatus || "",
 };
 
 function SortIcon({ direction }) {
@@ -87,11 +88,11 @@ export default function PaymentsTable({
         <thead className="bg-brand text-white">
           <tr>
             <th className="px-4 py-3 text-center font-semibold">S.No.</th>
-            <SortableHeader label="Order" sortKey="order" sort={sort} onSort={handleSort} />
-            <SortableHeader label="Service" sortKey="service" sort={sort} onSort={handleSort} />
+            <th className="px-4 py-3 text-left font-semibold">Order</th>
+            <th className="px-4 py-3 text-left font-semibold">Service</th>
             <SortableHeader label="Total" sortKey="total" align="right" sort={sort} onSort={handleSort} />
             <SortableHeader label="Balance Due" sortKey="balance" align="right" sort={sort} onSort={handleSort} />
-            <SortableHeader label="Payment Status" sortKey="status" sort={sort} onSort={handleSort} />
+            <th className="px-4 py-3 text-left font-semibold">Payment Status</th>
             {hasAnyAction && <th className="px-4 py-3 text-center font-semibold">Actions</th>}
           </tr>
         </thead>
