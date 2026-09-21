@@ -7,7 +7,7 @@ import {
   UserCircle2, XCircle, LayoutGrid, FileText, CreditCard,
   User, Mail, Phone, CheckCircle2, RotateCcw, Camera, Trash2,
 } from "lucide-react";
-import api from "../../../services/api";
+import api, { resolveMediaUrl } from "../../../services/api";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Pagination from "../../../components/common/Pagination";
 import { DonutChart, HBarChart, GaugeChart } from "../../../components/common/MiniCharts";
@@ -495,7 +495,7 @@ export default function BridgeEmployeeDetailPage() {
                 {photo ? (
                   <img src={URL.createObjectURL(photo)} alt="profile" className="w-full h-full object-cover" />
                 ) : staff.profile_image_url ? (
-                  <img src={staff.profile_image_url} alt="profile" className="w-full h-full object-cover" />
+                  <img src={resolveMediaUrl(staff.profile_image_url)} alt="profile" className="w-full h-full object-cover" />
                 ) : (
                   <UserCircle2 size={40} className="text-teal-200" />
                 )}

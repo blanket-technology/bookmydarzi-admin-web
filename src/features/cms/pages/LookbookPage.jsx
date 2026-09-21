@@ -2,6 +2,7 @@ import { Image as ImageIcon, Plus, Pencil, Trash2, Loader2 } from "lucide-react"
 import FormModal from "../../../components/common/FormModal.jsx";
 import ImageUploadField from "../../../components/common/ImageUploadField.jsx";
 import { SectionCard, Field, INPUT } from "../../../components/common/SectionCard.jsx";
+import { resolveMediaUrl } from "../../../services/api.js";
 import { LOOKBOOK_CATEGORIES, LOOKBOOK_IMAGE_UPLOAD_PATH } from "../constants/cmsConstants.js";
 import useLookbook from "../hooks/useLookbook.js";
 
@@ -129,7 +130,7 @@ export default function LookbookPage() {
                 <tr key={item.id} className="border-t border-gray-50 hover:bg-gray-50">
                   <td className="px-4 py-3">
                     {item.image_url
-                      ? <img src={item.image_url} alt="" className="w-14 h-14 object-cover rounded-lg border border-gray-100" />
+                      ? <img src={resolveMediaUrl(item.image_url)} alt="" className="w-14 h-14 object-cover rounded-lg border border-gray-100" />
                       : <div className="w-14 h-14 rounded-lg bg-gray-100 flex items-center justify-center"><ImageIcon size={13} className="text-gray-400" /></div>
                     }
                   </td>

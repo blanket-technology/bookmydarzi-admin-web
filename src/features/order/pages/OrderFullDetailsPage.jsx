@@ -819,7 +819,7 @@ export default function OrderFullDetailsPage() {
                       <div key={i} className="flex items-center gap-3">
                         <div className="w-14 h-14 rounded-xl overflow-hidden bg-teal-50 border border-gray-100 flex items-center justify-center shrink-0">
                           {it.image_url ? (
-                            <img src={it.image_url} alt={it.service_name || "Service"} className="w-full h-full object-cover" />
+                            <img src={resolveMediaUrl(it.image_url)} alt={it.service_name || "Service"} className="w-full h-full object-cover" />
                           ) : (
                             <Scissors size={22} className="text-teal-600" />
                           )}

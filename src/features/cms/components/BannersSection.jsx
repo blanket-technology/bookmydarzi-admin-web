@@ -2,6 +2,7 @@ import { Image as ImageIcon, Plus, Pencil, Trash2, Loader2 } from "lucide-react"
 import FormModal from "../../../components/common/FormModal.jsx";
 import ImageUploadField from "../../../components/common/ImageUploadField.jsx";
 import { SectionCard, Field, INPUT } from "../../../components/common/SectionCard.jsx";
+import { resolveMediaUrl } from "../../../services/api.js";
 import { BANNER_IMAGE_UPLOAD_PATH } from "../constants/cmsConstants.js";
 import useBanners from "../hooks/useBanners.js";
 
@@ -103,7 +104,12 @@ export default function BannersSection() {
                 <tr><td colSpan={6} className="text-center py-10 text-gray-400 text-sm">No banners yet. Click "Add Banner" to create one.</td></tr>
               ) : banners.map((b) => {
                 const id = b.Id ?? b.id;
-                const imgUrl = b.ImageUrl ?? b.image_url;
+                // Backend may return a host-relative path ("/static/...") when
+                // PUBLIC_BASE_URL isn't configured - resolveMediaUrl prefixes it
+                // with the backend origin so the browser doesn't try to load it
+                // from the admin panel's own origin (was rendering as a broken
+                // image icon for every banner).
+                const imgUrl = resolveMediaUrl(b.ImageUrl ?? b.image_url);
                 const title = b.Title ?? b.title;
                 const subtitle = b.Subtitle ?? b.subtitle;
                 const order = b.DisplayOrder ?? b.display_order ?? 0;
