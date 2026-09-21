@@ -61,11 +61,11 @@ export const INPUT_CLASS =
   "focus:border-teal-500 bg-gray-50 focus:bg-white transition-colors";
 
 export const USER_TABLE_COLUMNS = [
-  { key: "id", label: "ID", sortAccessor: (u) => u.Id },
-  { key: "name", label: "Name", sortAccessor: (u) => u.FullName || "" },
-  { key: "email", label: "Email", sortAccessor: (u) => u.Email || "" },
-  { key: "mobile", label: "Mobile", sortAccessor: (u) => u.Mobile || "" },
-  { key: "role", label: "Role", sortAccessor: (u) => u.Role || "" },
+  { key: "id", label: "ID" },
+  { key: "name", label: "Name" },
+  { key: "email", label: "Email" },
+  { key: "mobile", label: "Mobile" },
+  { key: "role", label: "Role" },
   { key: "verification", label: "Verified", align: "center" },
   { key: "joined", label: "Joined", sortAccessor: (u) => (u.CreatedAt ? new Date(u.CreatedAt) : null) },
   { key: "chevron", label: "" },
