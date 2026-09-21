@@ -50,6 +50,9 @@ export const MODULES = {
   MY_ACCOUNT: "myAccount", // every role manages their own profile
   INVENTORY: "inventory", // /inventory CRUD - admin/superadmin/employee (require_admin_permission)
   FLEET_TRACKING: "fleetTracking", // Deliveries/Pickups admin pages - GET /admin/orders (require_admin_orders)
+  TAILOR_PAYOUTS: "tailorPayouts", // /admin/payouts, /admin/commission-rates - superadmin-only backend gate
+  // (a payout amount reveals the platform's commission split, same
+  // sensitivity class as revenueAnalytics/financialReports above)
 };
 
 const ALL_FALSE = Object.fromEntries(Object.values(MODULES).map((m) => [m, false]));
@@ -82,6 +85,7 @@ const SUPERADMIN_PERMISSIONS = {
   myAccount: true,
   inventory: true,
   fleetTracking: true,
+  tailorPayouts: true,
 };
 
 // Admin is an OPERATIONS admin, not a business/finance admin - no revenue,
@@ -114,6 +118,7 @@ const ADMIN_PERMISSIONS = {
   myAccount: true,
   inventory: true,
   fleetTracking: true,
+  tailorPayouts: false, // backend is superadmin-only (require_admin_permission(SUPERADMIN)) - matches
 };
 
 const EMPLOYEE_PERMISSIONS = {
@@ -271,6 +276,7 @@ export const ROUTE_PERMISSION_MAP = {
   "/inventory": MODULES.INVENTORY,
   "/deliveries": MODULES.FLEET_TRACKING,
   "/pickups": MODULES.FLEET_TRACKING,
+  "/payouts": MODULES.TAILOR_PAYOUTS,
 };
 
 // Matches a concrete pathname (e.g. "/customers/42") against a route pattern

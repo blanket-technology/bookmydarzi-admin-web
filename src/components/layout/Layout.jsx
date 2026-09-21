@@ -25,6 +25,7 @@ import {
   XCircle,
   ClipboardList,
   Star,
+  Wallet,
 } from "lucide-react";
 import { LogoutPage } from "../../features/auth";
 import { adminWsService } from "../../services/adminWsService";
@@ -183,6 +184,7 @@ function Layout() {
     { name: "User Management", path: "/users", icon: Users, module: MODULES.USERS, matchPrefixes: ["/customers"] },
     { name: "Tailors", path: "/tailordetails", icon: Scissors, module: MODULES.TAILORS, matchPrefixes: ["/tailors", "/addtailor"] },
     { name: "Tailor Applications", path: "/tailor-applications", icon: ClipboardList, module: MODULES.TAILORS },
+    { name: "Tailor Payouts", path: "/payouts", icon: Wallet, module: MODULES.TAILOR_PAYOUTS },
     { name: "Bridge", path: "/bridgedetail", icon: Bike, module: MODULES.EMPLOYEES, matchPrefixes: ["/employees", "/employee-order-workflow", "/addbridge"] },
     { name: "Order Management", path: "/ordersdetails", icon: ShoppingCart, module: MODULES.ORDERS, matchPrefixes: ["/orders", "/addorder"] },
     { name: "Reviews", path: "/reviews", icon: Star, module: MODULES.ORDERS },
