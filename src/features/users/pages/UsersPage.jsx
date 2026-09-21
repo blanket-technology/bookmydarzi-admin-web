@@ -1,8 +1,11 @@
-import { AlertCircle, Users, Scissors, Bike, ShieldCheck, UserX } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, Download, Users, Scissors, Bike, ShieldCheck, UserX } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader.jsx";
 import UserFilters from "../components/UserFilters.jsx";
 import UserTable from "../components/UserTable.jsx";
 import useUsers from "../hooks/useUsers.js";
+import { exportUsersCsv } from "../services/userService.js";
+import { extractErrorMessage } from "../../../utils/formatters.js";
 
 // Same KpiCard visual language as the Payments page's Paid/Pending/Failed/COD
 // strip, so the two busiest management screens in the admin panel read as
@@ -49,6 +52,21 @@ export default function UsersPage() {
     handleLimitChange,
   } = useUsers();
 
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      await exportUsersCsv({ role: roleFilter, isActive: statusFilter });
+    } catch (err) {
+      setExportError(extractErrorMessage(err, "Export failed."));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-3 sm:p-5 w-full min-h-screen bg-gray-100">
       <PageHeader
@@ -64,12 +82,23 @@ export default function UsersPage() {
         onRoleChange={setRoleFilter}
         onStatusChange={setStatusFilter}
         onRefresh={handleRefresh}
+        actions={
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            title="Export the currently-filtered users as a CSV file"
+            className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Download size={14} className={exporting ? "animate-pulse" : undefined} />
+            {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        }
       />
 
-      {error && (
+      {(error || exportError) && (
         <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-          <AlertCircle size={16} /> {error}
-          <button onClick={handleRefresh} className="ml-auto underline font-semibold">Retry</button>
+          <AlertCircle size={16} /> {error || exportError}
+          {error && <button onClick={handleRefresh} className="ml-auto underline font-semibold">Retry</button>}
         </div>
       )}
 

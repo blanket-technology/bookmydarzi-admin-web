@@ -2,6 +2,7 @@ import api from "../../../services/api.js";
 import { getStoredUser } from "../../../store/authStore.jsx";
 import { ROLES } from "../../../constants/permissions.js";
 import { ORDERS_CACHE_KEY } from "../constants/orderConstants.js";
+import { triggerCsvDownload } from "../../../utils/csvDownload.js";
 
 export async function getOrdersList({ endpoint, params }) {
   const response = await api.get(endpoint, { params });
@@ -82,6 +83,17 @@ export async function getBroadcastStatus(orderId) {
 export async function downloadOrderInvoice(orderId) {
   const response = await api.get(`/orders/${orderId}/invoice`, { responseType: "blob" });
   return response.data;
+}
+
+/** Row-level CSV export (GET /admin/orders/export) - reuses whatever
+ * filters the caller currently has active (status/payment_status/
+ * tailor_id/date range), same filter contract as the paginated list. */
+export async function exportOrdersCsv(params) {
+  const response = await api.get("/admin/orders/export", {
+    params,
+    responseType: "blob",
+  });
+  triggerCsvDownload(response, `bmd_orders_${new Date().toISOString().slice(0, 10)}.csv`);
 }
 
 export async function refreshOrderFromList(order) {
