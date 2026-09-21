@@ -1,4 +1,5 @@
-import { AlertCircle, RefreshCw, Search, X, CheckCircle2, Clock, XCircle, Truck } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, Download, RefreshCw, Search, X, CheckCircle2, Clock, XCircle, Truck } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader.jsx";
 import Pagination from "../../../components/common/Pagination.jsx";
 import PaymentDetailModal from "../../../components/common/PaymentDetailModal.jsx";
@@ -7,6 +8,8 @@ import StatusOverrideModal from "../components/StatusOverrideModal.jsx";
 import PaymentsTable from "../components/PaymentsTable.jsx";
 import { PAYMENT_STATUS_FILTER_OPTIONS, PAYMENT_STATUS_LABELS } from "../constants/paymentConstants.js";
 import usePayments from "../hooks/usePayments.js";
+import { exportPaymentsCsv } from "../services/paymentService.js";
+import { extractErrorMessage } from "../../../utils/formatters.js";
 
 // Group a raw payment/settlement status into the four states an ops team
 // scans for. Used by the KPI summary row (computed from the loaded rows -
@@ -65,6 +68,21 @@ export default function PaymentsPage() {
     handleFilterStatusChange,
     isRefundable,
   } = usePayments();
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      await exportPaymentsCsv();
+    } catch (err) {
+      setExportError(extractErrorMessage(err, "Export failed."));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Status breakdown across the current page's orders. A quick at-a-glance
   // health strip (Paid / Pending / Failed / COD) like fintech ops dashboards.
@@ -147,12 +165,23 @@ export default function PaymentsPage() {
           >
             <RefreshCw size={14} /> Refresh
           </button>
+          {canManage && (
+            <button
+              onClick={handleExport}
+              disabled={exporting}
+              title="Export raw payment transactions as a CSV file"
+              className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              <Download size={14} className={exporting ? "animate-pulse" : undefined} />
+              {exporting ? "Exporting…" : "Export CSV"}
+            </button>
+          )}
         </div>
 
-        {error && (
+        {(error || exportError) && (
           <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
-            <AlertCircle size={16} />{error}
-            <button onClick={fetchOrders} className="ml-auto underline font-semibold">Retry</button>
+            <AlertCircle size={16} />{error || exportError}
+            {error && <button onClick={fetchOrders} className="ml-auto underline font-semibold">Retry</button>}
           </div>
         )}
 

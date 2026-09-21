@@ -10,6 +10,7 @@ export default function UserFilters({
   onRoleChange,
   onStatusChange,
   onRefresh,
+  actions,
 }) {
   const roleOptions = getRoleOptionsForViewer(getStoredUser()?.Role);
   const hasActiveFilters = Boolean(search || roleFilter || statusFilter);
@@ -71,6 +72,7 @@ export default function UserFilters({
       >
         <RefreshCw size={14} /> Refresh
       </button>
+      {actions}
     </div>
   );
 }

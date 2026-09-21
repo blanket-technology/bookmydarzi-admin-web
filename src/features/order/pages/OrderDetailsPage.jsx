@@ -1,4 +1,5 @@
-import { AlertCircle, AlertTriangle, Edit2, Trash2, Loader2, RefreshCw, Search, X, SlidersHorizontal } from "lucide-react";
+import { useState } from "react";
+import { AlertCircle, AlertTriangle, Download, Edit2, Trash2, Loader2, RefreshCw, Search, X, SlidersHorizontal } from "lucide-react";
 import PageHeader from "../../../components/common/PageHeader";
 import Pagination from "../../../components/common/Pagination";
 import StatusBadge from "../../../components/common/StatusBadge";
@@ -9,6 +10,8 @@ import { PAYMENT_STATUS_OPTIONS } from "../constants/orderConstants.js";
 import { getStatusFilterOptions } from "../utils/orderUtils.js";
 import CancelOrderModal from "../components/CancelOrderModal.jsx";
 import useOrderList from "../hooks/useOrderList.js";
+import { exportOrdersCsv } from "../services/orderService.js";
+import { extractErrorMessage } from "../../../utils/formatters.js";
 
 const STATUS_FILTER_OPTIONS = getStatusFilterOptions();
 
@@ -52,6 +55,27 @@ export default function OrderDetailsPage() {
     clearAdvancedFilters,
     handleFilterStatusChange,
   } = useOrderList();
+
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState("");
+
+  const handleExport = async () => {
+    setExporting(true);
+    setExportError("");
+    try {
+      await exportOrdersCsv({
+        status: filterStatus || undefined,
+        payment_status: filterPayment || undefined,
+        tailor_id: filterTailor || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
+      });
+    } catch (err) {
+      setExportError(extractErrorMessage(err, "Export failed."));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   if (!token) return null;
 
@@ -164,7 +188,23 @@ export default function OrderDetailsPage() {
           <RefreshCw size={14} className={refreshing ? "animate-spin" : undefined} />
           {refreshing ? "Refreshing…" : "Refresh"}
         </button>
+        {!isTailor && !isEmployee && (
+          <button
+            onClick={handleExport}
+            disabled={exporting}
+            title="Export the currently-filtered orders as a CSV file"
+            className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 px-3 py-2 rounded-lg text-sm font-semibold transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Download size={14} className={exporting ? "animate-pulse" : undefined} />
+            {exporting ? "Exporting…" : "Export CSV"}
+          </button>
+        )}
       </div>
+      {exportError && (
+        <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4 text-sm">
+          <AlertCircle size={16} />{exportError}
+        </div>
+      )}
 
       {!isTailor && showFilters && (
         <div className="bg-white border border-gray-100 rounded-xl p-4 mb-4 shadow-sm">
