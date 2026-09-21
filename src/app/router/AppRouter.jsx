@@ -26,6 +26,7 @@ import {
   PickupsPage,
 } from "../../features/order/index.js";
 import { InventoryPage } from "../../features/inventory/index.js";
+import { PayoutsPage } from "../../features/payouts/index.js";
 import { PaymentsPage } from "../../features/payments/index.js";
 import { OffersPage } from "../../features/offers/index.js";
 import { CatalogPage } from "../../features/catalog/index.js";
@@ -58,6 +59,7 @@ export default function AppRouter() {
             <Route path="/addtailor" element={<AddTailor />} />
             <Route path="/tailors/:id" element={<FullDetails />} />
             <Route path="/tailor-applications" element={<TailorApplications />} />
+            <Route path="/payouts" element={<PayoutsPage />} />
 
             <Route path="/bridgedetail" element={<BridgeDetails />} />
             <Route path="/addbridge" element={<AddBridge />} />

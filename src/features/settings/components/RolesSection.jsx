@@ -34,6 +34,7 @@ const MODULE_LABELS = {
   [MODULES.ROLES_PERMISSIONS]: "Roles & Permissions",
   [MODULES.SYSTEM_CONFIG]: "Billing & System Config",
   [MODULES.MY_ACCOUNT]: "My Account",
+  [MODULES.TAILOR_PAYOUTS]: "Tailor Payouts",
 };
 
 const ALL_ROLES = [ROLES.SUPERADMIN, ROLES.ADMIN, ROLES.EMPLOYEE, ROLES.TAILOR];
