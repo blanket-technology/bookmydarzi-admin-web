@@ -59,7 +59,7 @@ export default function OfferCard({ offer, onEdit, onDelete, onToggle }) {
         {offer.Description && (
           <p className="text-xs text-gray-400 line-clamp-2 leading-relaxed">{offer.Description}</p>
         )}
-        {(offer.CouponCode || offer.MinOrderValue > 0) && (
+        {(offer.CouponCode || offer.MinOrderValue > 0 || offer.MaxUses > 0) && (
           <div className="flex items-center gap-1.5 pt-1 flex-wrap">
             {offer.CouponCode && (
               <>
@@ -72,6 +72,15 @@ export default function OfferCard({ offer, onEdit, onDelete, onToggle }) {
             {offer.MinOrderValue > 0 && (
               <span className="text-[11px] font-semibold text-gray-500 bg-gray-50 border border-gray-100 px-2 py-0.5 rounded-md">
                 Min ₹{offer.MinOrderValue.toLocaleString("en-IN")}
+              </span>
+            )}
+            {offer.MaxUses > 0 && (
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-md border ${
+                (offer.UsageCount ?? 0) >= offer.MaxUses
+                  ? "text-rose-600 bg-rose-50 border-rose-100"
+                  : "text-gray-500 bg-gray-50 border-gray-100"
+              }`}>
+                {offer.UsageCount ?? 0}/{offer.MaxUses} used
               </span>
             )}
           </div>

@@ -7,6 +7,7 @@ export function offerToForm(offer) {
     discount_amount: offer.DiscountAmount ?? "",
     min_order_value: offer.MinOrderValue || "",
     max_discount_amount: offer.MaxDiscountAmount ?? "",
+    max_uses: offer.MaxUses ?? "",
     coupon_code: offer.CouponCode || "",
     image_url: offer.ImageUrl || "",
     valid_from: offer.ValidFrom ? offer.ValidFrom.slice(0, 10) : "",
@@ -32,6 +33,7 @@ export function buildOfferPayload(form) {
       form.discount_type === "percentage" && form.max_discount_amount !== ""
         ? Number(form.max_discount_amount)
         : null,
+    max_uses: form.max_uses !== "" ? Number(form.max_uses) : null,
     coupon_code: form.coupon_code.trim().toUpperCase() || null,
     image_url: form.image_url || null,
     valid_from: form.valid_from || null,
@@ -82,6 +84,12 @@ export function validateOfferDiscount(form) {
       if (!Number.isFinite(cap) || cap <= 0) {
         return "Max discount cap must be a positive number, or left blank for uncapped.";
       }
+    }
+  }
+  if (form.max_uses !== "") {
+    const maxUses = Number(form.max_uses);
+    if (!Number.isFinite(maxUses) || maxUses <= 0 || !Number.isInteger(maxUses)) {
+      return "Max uses must be a positive whole number, or left blank for unlimited.";
     }
   }
   return null;

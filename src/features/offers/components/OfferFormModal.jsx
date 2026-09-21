@@ -143,6 +143,21 @@ export default function OfferFormModal({
         />
       </Field>
 
+      <Field
+        label="Max Uses (platform-wide)"
+        hint="Total redemptions across every customer, e.g. 'first 100 uses'. Leave blank for unlimited. Independent of the once-per-customer limit."
+      >
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={form.max_uses}
+          onChange={(e) => onFormChange({ max_uses: e.target.value })}
+          className={inp}
+          placeholder="Unlimited"
+        />
+      </Field>
+
       <div className="grid grid-cols-2 gap-3">
         <Field label="Valid From" hint="Leave blank to start immediately">
           <div className="relative">
