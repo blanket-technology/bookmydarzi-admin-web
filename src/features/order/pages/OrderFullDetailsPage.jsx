@@ -1096,6 +1096,43 @@ export default function OrderFullDetailsPage() {
               )}
             </SectionCard>
 
+            {/* Repair Request - post-delivery inspection-window issue
+                report, if any. Read-only oversight here (the customer
+                reports it, the tailor resolves it via the app - see
+                POST /orders/{id}/report-issue and .../complete-repair on
+                the backend); admin just needs visibility. */}
+            {order.LatestRepairRequest && (
+              <SectionCard
+                icon={AlertTriangle}
+                title={order.LatestRepairRequest.resolved_at ? "Repair Completed" : "Issue Reported"}
+                accent={order.LatestRepairRequest.resolved_at ? theme.accent : "#dc2626"}
+              >
+                <div className="space-y-2">
+                  {!order.LatestRepairRequest.resolved_at && (
+                    <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-600">
+                      NEEDS REPAIR
+                    </span>
+                  )}
+                  <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                    {order.LatestRepairRequest.issue_description}
+                  </p>
+                  {order.LatestRepairRequest.issue_photo_urls?.length > 0 && (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {order.LatestRepairRequest.issue_photo_urls.map((url, idx) => (
+                        <a key={`${url}-${idx}`} href={url} target="_blank" rel="noopener noreferrer">
+                          <img src={url} alt="Issue evidence" className="w-14 h-14 rounded-lg object-cover border border-gray-200" />
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-gray-400">
+                    Reported {formatDateTime(order.LatestRepairRequest.reported_at)}
+                    {order.LatestRepairRequest.resolved_at && ` · Resolved ${formatDateTime(order.LatestRepairRequest.resolved_at)}`}
+                  </p>
+                </div>
+              </SectionCard>
+            )}
+
             {/* Progress Photos */}
             {(photos.length > 0 || currentRole === ROLES.TAILOR || photosError) && (
               <SectionCard
