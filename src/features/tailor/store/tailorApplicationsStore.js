@@ -9,6 +9,7 @@ import {
   getApplications,
   rejectApplication,
 } from "../services/tailorService.js";
+import { trackTailorApplicationApproved } from "../../../services/mixpanelService.js";
 
 export const useTailorApplicationsStore = create((set, get) => ({
   applications: [],
@@ -87,6 +88,7 @@ export const useTailorApplicationsStore = create((set, get) => ({
     set({ actionLoading: applicationId });
     try {
       const res = await approveApplication(applicationId, overridePan, panWaiverReason);
+      trackTailorApplicationApproved({ application_id: applicationId });
       notifySuccess(res.message || "Application approved.");
       get().fetchApplications();
       return true;
