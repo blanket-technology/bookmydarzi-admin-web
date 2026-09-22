@@ -20,6 +20,22 @@ export async function updateTailor(tailorId, payload) {
   return response.data;
 }
 
+// Structured specialization checklist (ServiceSubCategory ids) - what
+// broadcast routing actually matches orders against, distinct from the
+// legacy free-text `specialization` field above. See
+// PUT /admin/tailors/{id}/specializations on the backend.
+export async function getTailorSpecializations(tailorId) {
+  const response = await api.get(`/admin/tailors/${tailorId}/specializations`);
+  return response.data.service_sub_category_ids ?? [];
+}
+
+export async function updateTailorSpecializations(tailorId, serviceSubCategoryIds) {
+  const response = await api.put(`/admin/tailors/${tailorId}/specializations`, {
+    service_sub_category_ids: serviceSubCategoryIds,
+  });
+  return response.data;
+}
+
 export async function deleteTailor(tailorId) {
   await api.delete(`/admin/tailors/${tailorId}`);
 }

@@ -11,6 +11,7 @@ import {
 } from "../../../components/common/EntityWorkspace";
 import { KycCard, DocModal } from "../../../components/common/KycUpload";
 import { InputField, SelectField } from "../../../components/common/FormFields";
+import TailorSpecializationSection from "../components/TailorSpecializationSection";
 
 import {
   Save, KeyRound, Trash2,
@@ -1083,6 +1084,8 @@ export default function TailorFullDetailsPage() {
               </div>
             </div>
           )}
+
+          {editMode && <TailorSpecializationSection tailorId={tailorId} />}
         </div>
       </div>
     </>
