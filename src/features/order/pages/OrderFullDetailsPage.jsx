@@ -39,6 +39,29 @@ import {
   ORDER_STATUS,
 } from "../../../utils/orderActions";
 
+// Mirrors the backend's exact allow-list for (re)assigning a tailor -
+// app/services/orders/assign_tailor_service.py's _ASSIGN_FROM. Bug fix:
+// this control previously stayed visible through every status except
+// delivered/cancelled/order_rejected, including every stitching/repair/
+// delivery/return stage the backend always rejects with a 422 ("Cannot
+// assign tailor when order status is '...'") - admin could select a
+// tailor, hit Assign, and just get an error, with no indication
+// beforehand that it wouldn't work. Reassignment itself IS a real,
+// supported feature right after initial assignment (through PICKED_UP,
+// not just before it) - this only tightens the set down to what the
+// backend actually accepts, it doesn't remove the reassignment
+// capability.
+const TAILOR_ASSIGNABLE_STATUSES = new Set([
+  ORDER_STATUS.ORDER_PLACED,
+  ORDER_STATUS.ORDER_ACCEPTED,
+  ORDER_STATUS.SEARCHING_TAILOR,
+  ORDER_STATUS.BROADCASTED,
+  ORDER_STATUS.TAILOR_ASSIGNED,
+  ORDER_STATUS.PICKUP_SCHEDULED,
+  ORDER_STATUS.PICKUP_PENDING,
+  ORDER_STATUS.PICKED_UP,
+]);
+
 // Mirrors backend orders.py _PHOTO_UPLOAD_STAGES - tailor uploads are only
 // accepted while the order is in one of these stitching stages.
 const PHOTO_UPLOAD_STAGES = new Set([
@@ -1525,7 +1548,7 @@ export default function OrderFullDetailsPage() {
                   }
                 />
               )}
-              {!isTailor && !["delivered", "cancelled", "order_rejected"].includes(status) && (
+              {!isTailor && TAILOR_ASSIGNABLE_STATUSES.has(status) && (
                 <div className="mt-4 flex flex-col gap-2">
                   <select
                     value={selectedTailorId}
