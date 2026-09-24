@@ -39,6 +39,14 @@ export const ORDER_STATUS = {
   READY_FOR_DISPATCH: "ready_for_dispatch",
   OUT_FOR_DELIVERY: "out_for_delivery",
   DELIVERED: "delivered",
+  // Post-delivery 2h inspection window + repair loop (backend
+  // app/constants/order_status.py, added the same session as this
+  // constant) - was missing here entirely, which is what let the
+  // POST_DELIVERY_STATUSES check below need bare string literals until
+  // now.
+  INSPECTION_WINDOW: "inspection_window",
+  IN_REPAIR: "in_repair",
+  REPAIR_COMPLETED: "repair_completed",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
   RETURN_PENDING: "return_pending",
@@ -66,6 +74,9 @@ export const STATUS_LABELS = {
   ready_for_dispatch: "Ready for Dispatch",
   out_for_delivery: "Out for Delivery",
   delivered: "Delivered",
+  inspection_window: "Inspection Window",
+  in_repair: "In Repair",
+  repair_completed: "Repair Completed",
   completed: "Completed",
   cancelled: "Cancelled",
   return_pending: "Return Pending",
@@ -438,7 +449,26 @@ export function getOrderActions(role, order, payment) {
   }
 
   // ── cancel (admin/superadmin only via dedicated endpoint - _ADMIN_BLOCKED) ──
-  if (staff && role !== ROLE.EMPLOYEE) {
+  // Bug fix: this used to push unconditionally for any non-employee staff
+  // role, gated only by the earlier TERMINAL_STATUSES early-return - but
+  // delivered/inspection_window/in_repair/repair_completed are NOT
+  // terminal, so the button stayed live all the way through the
+  // post-delivery inspection/repair loop. The garment has already been
+  // physically handed to the customer by that point - "cancel" no longer
+  // means anything (there's nothing left to cancel), and the backend's
+  // cancellation_service._cancel_order_core hard-blocks exactly these
+  // statuses now for the same reason (confirmed live in production: order
+  // ORD-20260920-KZG4G5 was cancelled 43 seconds after being marked
+  // delivered, from stage inspection_window, before that backend fix
+  // shipped). A genuine post-delivery issue goes through the report-issue/
+  // repair flow instead, not cancellation.
+  const POST_DELIVERY_STATUSES = new Set([
+    ORDER_STATUS.DELIVERED,
+    ORDER_STATUS.INSPECTION_WINDOW,
+    ORDER_STATUS.IN_REPAIR,
+    ORDER_STATUS.REPAIR_COMPLETED,
+  ]);
+  if (staff && role !== ROLE.EMPLOYEE && !POST_DELIVERY_STATUSES.has(status)) {
     actions.push({
       id: "cancel_order",
       label: "Cancel Order",
