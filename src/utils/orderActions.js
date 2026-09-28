@@ -448,6 +448,61 @@ export function getOrderActions(role, order, payment) {
     });
   }
 
+  // ── force-deliver / force-complete (admin/superadmin only) ──
+  // Escape hatch for a genuinely stuck order - Bridge employee stuck,
+  // tailor unresponsive - so admin can still push the order through
+  // without needing Bridge/tailor to act. Not shown to EMPLOYEE, same
+  // elevated bar as Cancel Order. Same POST_DELIVERY-adjacent reasoning:
+  // force-deliver only makes sense before delivery has happened, and
+  // force-complete only once it has (or is stuck in the post-delivery
+  // loop) - see order_force_service.py for the exact server-side rules
+  // this mirrors.
+  const ADMIN_STAFF_ROLES = new Set([ROLE.ADMIN, ROLE.SUPERADMIN]);
+  const NOT_FORCE_DELIVERABLE = new Set([
+    ORDER_STATUS.CANCELLED,
+    ORDER_STATUS.DELIVERED,
+    ORDER_STATUS.INSPECTION_WINDOW,
+    ORDER_STATUS.IN_REPAIR,
+    ORDER_STATUS.REPAIR_COMPLETED,
+    ORDER_STATUS.COMPLETED,
+    ORDER_STATUS.ORDER_REJECTED,
+    ORDER_STATUS.PENDING_PAYMENT,
+    ORDER_STATUS.PAYMENT_FAILED,
+  ]);
+  if (ADMIN_STAFF_ROLES.has(role) && !NOT_FORCE_DELIVERABLE.has(status)) {
+    actions.push({
+      id: "force_deliver_order",
+      label: "Force Deliver (Admin Override)",
+      endpoint: (o) => `/admin/orders/${o.Id}/force-deliver`,
+      method: "patch",
+      requiresReason: true,
+      bodyFromInput: (input) => ({ reason: input.reason }),
+      group: "danger",
+      disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
+    });
+  }
+  // Also force-completable from any earlier, non-terminal status (mirrors
+  // force_complete_order server-side, which routes through force-deliver
+  // first when the order hasn't reached Delivered yet) - anything that
+  // isn't already Cancelled/Completed/Rejected qualifies.
+  const NOT_FORCE_COMPLETABLE = new Set([
+    ORDER_STATUS.CANCELLED,
+    ORDER_STATUS.COMPLETED,
+    ORDER_STATUS.ORDER_REJECTED,
+  ]);
+  if (ADMIN_STAFF_ROLES.has(role) && !NOT_FORCE_COMPLETABLE.has(status)) {
+    actions.push({
+      id: "force_complete_order",
+      label: "Force Complete (Admin Override)",
+      endpoint: (o) => `/admin/orders/${o.Id}/force-complete`,
+      method: "patch",
+      requiresReason: true,
+      bodyFromInput: (input) => ({ reason: input.reason }),
+      group: "danger",
+      disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
+    });
+  }
+
   // ── cancel (admin/superadmin only via dedicated endpoint - _ADMIN_BLOCKED) ──
   // Bug fix: this used to push unconditionally for any non-employee staff
   // role, gated only by the earlier TERMINAL_STATUSES early-return - but
