@@ -851,6 +851,9 @@ export default function OrderFullDetailsPage() {
                           <p className="text-sm font-bold text-gray-800 truncate">{it.service_name || "Service"}</p>
                           {it.category_name && <p className="text-xs text-gray-500 truncate">{it.category_name}</p>}
                           {it.person_name && <p className="text-[11px] text-gray-400 mt-0.5">For: {it.person_name}</p>}
+                          {it.notes && (
+                            <p className="text-[11px] text-gray-500 mt-0.5 italic">Note: {it.notes}</p>
+                          )}
                           {Array.isArray(it.addons) && it.addons.length > 0 && (
                             <div className="mt-1 flex flex-wrap gap-1">
                               {it.addons.map((addon, ai) => (

@@ -680,6 +680,9 @@ export default function BridgeFullDetailsPage() {
                   <span className="text-sm font-bold text-gray-700">₹{item.price}</span>
                 </div>
                 <p className="text-xs text-gray-400">{item.service_name}{item.gender ? ` · ${item.gender}` : ""}</p>
+                {item.notes && (
+                  <p className="text-xs text-gray-500 mt-0.5 italic">Note: {item.notes}</p>
+                )}
                 {item.measurements?.length > 0 && (
                   <p className="text-xs text-teal-600 mt-0.5">{item.measurements.map((m) => `${m.measurement_name}: ${m.measurement_value}`).join(" · ")}</p>
                 )}
