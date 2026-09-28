@@ -819,7 +819,14 @@ export default function OrderFullDetailsPage() {
               accent={theme.accent}
               right={
                 <div className="flex flex-col items-end gap-0.5">
-                  <span className="text-[11px] font-mono text-gray-400">Order ID: {order.Id}</span>
+                  {/* Bug fix: this showed order.Id (the internal DB row
+                      number, e.g. "339") - meaningless to admin/support,
+                      who only ever reference the real order code shown in
+                      the header above. Shows that same code here instead,
+                      so this card is self-contained. */}
+                  <span className="text-[11px] font-mono text-gray-400">
+                    Order ID: {order.OrderCode || order.OrderNumber || `#${order.Id}`}
+                  </span>
                   {order.CreatedAt && (
                     <span className="text-[11px] text-gray-400">Ordered {formatDateTime(order.CreatedAt)}</span>
                   )}
