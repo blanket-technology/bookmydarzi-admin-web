@@ -416,6 +416,32 @@ export function getOrderActions(role, order, payment) {
       disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
     });
   }
+  // ── admin override: complete with an outstanding balance, writing it off ──
+  // Distinct from the button above (which stays hard-blocked for employees
+  // and for admin without deliberately choosing this) - only appears when
+  // there's actually a balance to override, requires a reason (shown to
+  // the admin as an explicit "₹X unpaid - proceed anyway?" prompt via
+  // requiresReason), and is backed by complete_employee_order's
+  // admin_override param server-side (writes RemainingAmount to 0,
+  // PaymentStatus to FULLY_PAID, audited as ORDER_FORCE_DELIVERED).
+  if (
+    status === ORDER_STATUS.OUT_FOR_DELIVERY &&
+    remaining > 0 &&
+    (role === ROLE.ADMIN || role === ROLE.SUPERADMIN)
+  ) {
+    actions.push({
+      id: "complete_order_override",
+      label: `Mark Delivered Anyway (₹${remaining} Unpaid)`,
+      endpoint: (o) => `/employee/orders/${o.Id}/complete`,
+      method: "patch",
+      requiresReason: true,
+      bodyFromInput: (input) => ({
+        admin_override: true,
+        override_reason: input.reason,
+      }),
+      group: "danger",
+    });
+  }
 
   // ── assign tailor (admin/superadmin/employee) - mirrors the backend's
   // _ASSIGN_FROM whitelist exactly (assign_tailor_service.py), not just "not
@@ -455,23 +481,17 @@ export function getOrderActions(role, order, payment) {
   // order through without needing Bridge/tailor to act. Not shown to
   // EMPLOYEE, same elevated bar as Cancel Order.
   //
-  // Bug fix: this used to be a deny-list ("not already
-  // cancelled/delivered/completed/pending-payment"), which meant the
-  // button rendered - and looked clickable, only "disabled" by the
-  // separate payment-balance check - all the way back at
-  // order_placed/searching_tailor/tailor_assigned, before the order has
-  // even been picked up. "Force Deliver" makes no sense when nothing has
-  // physically happened yet; it's an allow-list now, gated on the order
-  // having actually reached a stage where physical custody plausibly
-  // exists (picked up or later) and delivery/completion is the genuinely
-  // missing step.
+  // Bug fix: this was first tightened from a deny-list down to "picked up
+  // or later", but that still showed the button immediately after pickup -
+  // while mid-stitching, nothing is actually ready to deliver yet.
+  // Confirmed live: the button appeared right at "Out for Delivery"'s
+  // predecessor stages too. Force Deliver now only shows once the garment
+  // is genuinely finished and packed - ready_for_dispatch (tailor marked
+  // it done, waiting on a delivery partner) or out_for_delivery (a
+  // delivery attempt already started but got stuck) - matching the
+  // tightened backend gate in order_force_service.py exactly.
   const ADMIN_STAFF_ROLES = new Set([ROLE.ADMIN, ROLE.SUPERADMIN]);
   const FORCE_DELIVERABLE_FROM = new Set([
-    ORDER_STATUS.PICKED_UP,
-    ORDER_STATUS.CLOTH_RECEIVED_BY_TAILOR,
-    ORDER_STATUS.STITCHING_STARTED,
-    ORDER_STATUS.IN_PROGRESS,
-    ORDER_STATUS.FINAL_CHECK,
     ORDER_STATUS.READY_FOR_DISPATCH,
     ORDER_STATUS.OUT_FOR_DELIVERY,
   ]);
