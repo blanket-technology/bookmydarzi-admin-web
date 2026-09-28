@@ -449,27 +449,33 @@ export function getOrderActions(role, order, payment) {
   }
 
   // ── force-deliver / force-complete (admin/superadmin only) ──
-  // Escape hatch for a genuinely stuck order - Bridge employee stuck,
-  // tailor unresponsive - so admin can still push the order through
-  // without needing Bridge/tailor to act. Not shown to EMPLOYEE, same
-  // elevated bar as Cancel Order. Same POST_DELIVERY-adjacent reasoning:
-  // force-deliver only makes sense before delivery has happened, and
-  // force-complete only once it has (or is stuck in the post-delivery
-  // loop) - see order_force_service.py for the exact server-side rules
-  // this mirrors.
+  // Escape hatch for a genuinely stuck order - cloth already in the
+  // tailor's hands but no Bridge employee available for delivery, or a
+  // tailor gone unresponsive mid-stitching - so admin can still push the
+  // order through without needing Bridge/tailor to act. Not shown to
+  // EMPLOYEE, same elevated bar as Cancel Order.
+  //
+  // Bug fix: this used to be a deny-list ("not already
+  // cancelled/delivered/completed/pending-payment"), which meant the
+  // button rendered - and looked clickable, only "disabled" by the
+  // separate payment-balance check - all the way back at
+  // order_placed/searching_tailor/tailor_assigned, before the order has
+  // even been picked up. "Force Deliver" makes no sense when nothing has
+  // physically happened yet; it's an allow-list now, gated on the order
+  // having actually reached a stage where physical custody plausibly
+  // exists (picked up or later) and delivery/completion is the genuinely
+  // missing step.
   const ADMIN_STAFF_ROLES = new Set([ROLE.ADMIN, ROLE.SUPERADMIN]);
-  const NOT_FORCE_DELIVERABLE = new Set([
-    ORDER_STATUS.CANCELLED,
-    ORDER_STATUS.DELIVERED,
-    ORDER_STATUS.INSPECTION_WINDOW,
-    ORDER_STATUS.IN_REPAIR,
-    ORDER_STATUS.REPAIR_COMPLETED,
-    ORDER_STATUS.COMPLETED,
-    ORDER_STATUS.ORDER_REJECTED,
-    ORDER_STATUS.PENDING_PAYMENT,
-    ORDER_STATUS.PAYMENT_FAILED,
+  const FORCE_DELIVERABLE_FROM = new Set([
+    ORDER_STATUS.PICKED_UP,
+    ORDER_STATUS.CLOTH_RECEIVED_BY_TAILOR,
+    ORDER_STATUS.STITCHING_STARTED,
+    ORDER_STATUS.IN_PROGRESS,
+    ORDER_STATUS.FINAL_CHECK,
+    ORDER_STATUS.READY_FOR_DISPATCH,
+    ORDER_STATUS.OUT_FOR_DELIVERY,
   ]);
-  if (ADMIN_STAFF_ROLES.has(role) && !NOT_FORCE_DELIVERABLE.has(status)) {
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status)) {
     actions.push({
       id: "force_deliver_order",
       label: "Force Deliver (Admin Override)",
@@ -481,16 +487,21 @@ export function getOrderActions(role, order, payment) {
       disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
     });
   }
-  // Also force-completable from any earlier, non-terminal status (mirrors
-  // force_complete_order server-side, which routes through force-deliver
-  // first when the order hasn't reached Delivered yet) - anything that
-  // isn't already Cancelled/Completed/Rejected qualifies.
-  const NOT_FORCE_COMPLETABLE = new Set([
-    ORDER_STATUS.CANCELLED,
-    ORDER_STATUS.COMPLETED,
-    ORDER_STATUS.ORDER_REJECTED,
+  // Force-complete: only once the order has actually reached Delivered or
+  // is stuck somewhere in the post-delivery inspection/repair loop - there
+  // is nothing to "complete" before delivery has happened, so this does
+  // NOT share force-deliver's earlier stages the way the backend's
+  // force_complete_order (which auto-routes through force-deliver first)
+  // technically allows; the button here only appears once delivery is the
+  // relevant next/recent step, keeping the two actions visually
+  // distinct instead of both floating on every mid-stitching order.
+  const FORCE_COMPLETABLE_FROM = new Set([
+    ORDER_STATUS.DELIVERED,
+    ORDER_STATUS.INSPECTION_WINDOW,
+    ORDER_STATUS.IN_REPAIR,
+    ORDER_STATUS.REPAIR_COMPLETED,
   ]);
-  if (ADMIN_STAFF_ROLES.has(role) && !NOT_FORCE_COMPLETABLE.has(status)) {
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_COMPLETABLE_FROM.has(status)) {
     actions.push({
       id: "force_complete_order",
       label: "Force Complete (Admin Override)",
