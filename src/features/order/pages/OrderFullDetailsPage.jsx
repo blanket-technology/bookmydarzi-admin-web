@@ -855,15 +855,20 @@ export default function OrderFullDetailsPage() {
                             <p className="text-[11px] text-gray-500 mt-0.5 italic">Note: {it.notes}</p>
                           )}
                           {Array.isArray(it.addons) && it.addons.length > 0 && (
-                            <div className="mt-1 flex flex-wrap gap-1">
+                            <div className="mt-1 flex flex-col gap-1">
                               {it.addons.map((addon, ai) => (
-                                <span
-                                  key={addon.addon_id ?? ai}
-                                  className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 rounded-md px-1.5 py-0.5"
-                                  title={addon.note || undefined}
-                                >
-                                  + {addon.name} (₹{Number(addon.price).toLocaleString("en-IN")})
-                                </span>
+                                <div key={addon.addon_id ?? ai} className="flex flex-wrap items-center gap-1">
+                                  <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-teal-700 bg-teal-50 border border-teal-100 rounded-md px-1.5 py-0.5">
+                                    + {addon.name} (₹{Number(addon.price).toLocaleString("en-IN")})
+                                  </span>
+                                  {/* Bug fix: this note was only reachable via a hover
+                                      tooltip (title attribute) - easy to miss entirely for
+                                      something the customer explicitly typed. Now shown
+                                      inline, same as the per-item Notes row above. */}
+                                  {addon.note && (
+                                    <span className="text-[11px] text-gray-500 italic">Note: {addon.note}</span>
+                                  )}
+                                </div>
                               ))}
                             </div>
                           )}
