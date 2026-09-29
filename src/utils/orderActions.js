@@ -507,6 +507,19 @@ export function getOrderActions(role, order, payment) {
       disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
     });
   }
+  // ── same override pattern as complete_order_override below: force-deliver
+  // with a stuck balance, writing it off instead of staying hard-blocked ──
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status) && remaining > 0) {
+    actions.push({
+      id: "force_deliver_order_write_off",
+      label: `Force Deliver Anyway (₹${remaining} Unpaid)`,
+      endpoint: (o) => `/admin/orders/${o.Id}/force-deliver`,
+      method: "patch",
+      requiresReason: true,
+      bodyFromInput: (input) => ({ reason: input.reason, write_off_balance: true }),
+      group: "danger",
+    });
+  }
   // Force-complete: only once the order has actually reached Delivered or
   // is stuck somewhere in the post-delivery inspection/repair loop - there
   // is nothing to "complete" before delivery has happened, so this does
@@ -531,6 +544,18 @@ export function getOrderActions(role, order, payment) {
       bodyFromInput: (input) => ({ reason: input.reason }),
       group: "danger",
       disabledReason: remaining > 0 ? `Balance of ₹${remaining} must be collected first` : null,
+    });
+  }
+  // ── same override pattern as force_deliver_order_write_off above ──
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_COMPLETABLE_FROM.has(status) && remaining > 0) {
+    actions.push({
+      id: "force_complete_order_write_off",
+      label: `Force Complete Anyway (₹${remaining} Unpaid)`,
+      endpoint: (o) => `/admin/orders/${o.Id}/force-complete`,
+      method: "patch",
+      requiresReason: true,
+      bodyFromInput: (input) => ({ reason: input.reason, write_off_balance: true }),
+      group: "danger",
     });
   }
 
