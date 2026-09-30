@@ -187,6 +187,24 @@ function journeyIndex(status) {
   return i; // -1 for cancelled/rejected/unknown
 }
 
+// Bug fix: the "Stitching" step buckets 4 distinct backend statuses
+// (stitching_started/in_progress/final_check/ready_for_dispatch) into one
+// visual step with no further detail - an admin clicking "Mark In
+// Progress" or "Move to Final Check" saw the stepper stay dot-for-dot
+// identical before and after (same step index, same "active" state),
+// even though the write genuinely succeeded and the order was refetched.
+// The real status WAS visible elsewhere on the page (header badge,
+// Internal Status row), just invisible in the widget most likely to be
+// watched. This sub-label renders under the active step's own label so a
+// click on either button now produces immediate, visible feedback in the
+// stepper itself.
+const STEP_SUBLABELS = {
+  stitching_started: "Stitching Started",
+  in_progress: "In Progress",
+  final_check: "Final Check",
+  ready_for_dispatch: "Ready for Dispatch",
+};
+
 /** Horizontal progress stepper across the order lifecycle. Cancelled/rejected
  * orders show a distinct "halted" state instead of the journey. */
 function StatusStepper({ status }) {
@@ -233,6 +251,9 @@ function StatusStepper({ status }) {
               </div>
               <span className={`text-xs font-semibold pt-1 ${active ? "text-teal-700" : done ? "text-gray-600" : "text-gray-400"}`}>
                 {step.label}
+                {active && STEP_SUBLABELS[status] && (
+                  <span className="block text-[11px] font-normal text-teal-600">{STEP_SUBLABELS[status]}</span>
+                )}
               </span>
             </div>
           );
@@ -256,8 +277,11 @@ function StatusStepper({ status }) {
                 <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold ${dot}`}>
                   {done ? "✓" : i + 1}
                 </div>
-                <span className={`text-[10px] font-semibold whitespace-nowrap ${active ? "text-teal-700" : done ? "text-gray-600" : "text-gray-400"}`}>
+                <span className={`text-[10px] font-semibold whitespace-nowrap text-center ${active ? "text-teal-700" : done ? "text-gray-600" : "text-gray-400"}`}>
                   {step.label}
+                  {active && STEP_SUBLABELS[status] && (
+                    <span className="block text-[9px] font-normal text-teal-600">{STEP_SUBLABELS[status]}</span>
+                  )}
                 </span>
               </div>
               {i < JOURNEY.length - 1 && (
