@@ -159,21 +159,32 @@ export function getOrderActions(role, order, payment) {
   // endpoint.
   const needsPickupEmployee = !order.AssignedEmployeeId;
 
-  // ── order_accepted → schedule pickup (parallel to broadcast, which is automatic) ──
-  if (status === ORDER_STATUS.ORDER_ACCEPTED && (role === ROLE.EMPLOYEE || staff)) {
-    actions.push({
+  // Bug fix: both call sites below used to unconditionally push BOTH
+  // "Schedule Pickup (Instant)" and "Schedule Pickup (Scheduled)" - but the
+  // customer already chose one of the two at checkout (Order.PickupType,
+  // set at creation via direct_order_service.py/checkout_service.py and
+  // never null from the first status onward). Showing both let an admin
+  // override the customer's own choice with no indication that's what
+  // they were doing. Now only the matching action renders, single-button,
+  // relabeled without the "(Instant)"/"(Scheduled)" suffix since there's
+  // no longer a choice being presented. Falls back to showing both only if
+  // PickupType is somehow genuinely absent (shouldn't happen per the
+  // backend, but a missing pickup action entirely would be worse).
+  const schedulePickupActions = () => {
+    const pickupType = (order.PickupType || "").toLowerCase();
+    const instant = {
       id: "schedule_pickup_instant",
-      label: "Schedule Pickup (Instant)",
+      label: pickupType ? "Schedule Pickup" : "Schedule Pickup (Instant)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
       requiresInput: needsPickupEmployee ? ["pickup_employee_id"] : undefined,
       bodyFromInput: () => ({ pickup_type: "instant" }),
       body: needsPickupEmployee ? undefined : { pickup_type: "instant" },
       group: "primary",
-    });
-    actions.push({
+    };
+    const scheduled = {
       id: "schedule_pickup_scheduled",
-      label: "Schedule Pickup (Scheduled)",
+      label: pickupType ? "Schedule Pickup" : "Schedule Pickup (Scheduled)",
       endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
       method: "patch",
       requiresInput: [
@@ -186,8 +197,16 @@ export function getOrderActions(role, order, payment) {
         scheduled_pickup_at: input.scheduled_pickup_at,
         pickup_time_slot: input.pickup_time_slot,
       }),
-      group: "secondary",
-    });
+      group: "primary",
+    };
+    if (pickupType === "instant") return [instant];
+    if (pickupType === "scheduled") return [scheduled];
+    return [instant, { ...scheduled, group: "secondary" }];
+  };
+
+  // ── order_accepted → schedule pickup (parallel to broadcast, which is automatic) ──
+  if (status === ORDER_STATUS.ORDER_ACCEPTED && (role === ROLE.EMPLOYEE || staff)) {
+    actions.push(...schedulePickupActions());
   }
 
   // ── tailor_assigned → schedule pickup (same parallel track as
@@ -195,33 +214,7 @@ export function getOrderActions(role, order, payment) {
   // so an order can enter pickup as soon as a tailor is found even if it
   // was never scheduled right after acceptance) ──
   if (status === ORDER_STATUS.TAILOR_ASSIGNED && (role === ROLE.EMPLOYEE || staff)) {
-    actions.push({
-      id: "schedule_pickup_instant",
-      label: "Schedule Pickup (Instant)",
-      endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
-      method: "patch",
-      requiresInput: needsPickupEmployee ? ["pickup_employee_id"] : undefined,
-      bodyFromInput: () => ({ pickup_type: "instant" }),
-      body: needsPickupEmployee ? undefined : { pickup_type: "instant" },
-      group: "primary",
-    });
-    actions.push({
-      id: "schedule_pickup_scheduled",
-      label: "Schedule Pickup (Scheduled)",
-      endpoint: (o) => `/employee/orders/${o.Id}/schedule-pickup`,
-      method: "patch",
-      requiresInput: [
-        ...(needsPickupEmployee ? ["pickup_employee_id"] : []),
-        "scheduled_pickup_at",
-        "pickup_time_slot",
-      ],
-      bodyFromInput: (input) => ({
-        pickup_type: "scheduled",
-        scheduled_pickup_at: input.scheduled_pickup_at,
-        pickup_time_slot: input.pickup_time_slot,
-      }),
-      group: "secondary",
-    });
+    actions.push(...schedulePickupActions());
   }
 
   // ── pickup_pending / pickup_scheduled → confirm pickup ──

@@ -155,13 +155,31 @@ function ServiceabilityBadge({ address }) {
 // into the handful of milestones an ops person tracks. `match` lists every
 // raw status that maps to this step (so the stepper lights up correctly no
 // matter which fine-grained status the order is in).
+// Bug fix: cloth_received_by_tailor used to be grouped with "assigned"
+// (searching_tailor/broadcasted/tailor_assigned), but the backend's own
+// state machine (app/constants/order_status.py TRANSITIONS) places it
+// strictly AFTER picked_up - cloth is only "received by tailor" once it's
+// actually been picked up and handed over. The backend's own
+// CUSTOMER_STATUS_MAP maps both PICKED_UP and CLOTH_RECEIVED_BY_TAILOR to
+// the same customer-visible "Pickup Completed" milestone. Leaving it in
+// "assigned" made the stepper look stuck at step 2/6 even after the cloth
+// had genuinely been picked up and handed to the tailor - visually
+// indistinguishable from "just assigned, nothing else happened yet".
 const JOURNEY = [
   { key: "placed",    label: "Placed",       match: ["order_placed", "pending_payment", "payment_failed", "order_accepted"] },
-  { key: "assigned",  label: "Tailor Assigned", match: ["searching_tailor", "broadcasted", "tailor_assigned", "cloth_received_by_tailor"] },
-  { key: "pickup",    label: "Picked Up",    match: ["pickup_pending", "pickup_scheduled", "picked_up"] },
+  { key: "assigned",  label: "Tailor Assigned", match: ["searching_tailor", "broadcasted", "tailor_assigned"] },
+  { key: "pickup",    label: "Picked Up",    match: ["pickup_pending", "pickup_scheduled", "picked_up", "cloth_received_by_tailor"] },
   { key: "stitching", label: "Stitching",    match: ["stitching_started", "in_progress", "final_check", "ready_for_dispatch"] },
   { key: "delivery",  label: "Out for Delivery", match: ["out_for_delivery"] },
-  { key: "done",      label: "Delivered",    match: ["delivered", "completed"] },
+  // inspection_window/in_repair/repair_completed are the post-delivery
+  // report-an-issue loop (app/constants/order_status.py) - all still
+  // "Delivered" from a fulfillment-journey standpoint (the order has
+  // genuinely been delivered, may just be mid-repair). Without these,
+  // journeyIndex() returned -1 for any order in this loop and the stepper
+  // showed the ENTIRE journey as not-yet-started for an order that had
+  // actually completed delivery - same bug class as cloth_received_by_tailor
+  // above, just for a different gap in status coverage.
+  { key: "done",      label: "Delivered",    match: ["delivered", "completed", "inspection_window", "in_repair", "repair_completed"] },
 ];
 
 function journeyIndex(status) {
