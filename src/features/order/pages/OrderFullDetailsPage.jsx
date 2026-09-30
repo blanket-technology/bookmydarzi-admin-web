@@ -943,6 +943,20 @@ export default function OrderFullDetailsPage() {
                   </div>
                 </div>
               )}
+
+              {/* Voice note the customer recorded at checkout - same
+                  VoiceNoteUrl already shown to Bridge/tailor in bmdadmin
+                  (OrderMeasurementCard.jsx's VoiceNoteChip), previously
+                  missing entirely from this admin page despite the data
+                  already being present on this same order response. */}
+              {order.VoiceNoteUrl && (
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                    Voice Note from Customer
+                  </p>
+                  <audio controls src={resolveMediaUrl(order.VoiceNoteUrl)} className="w-full max-w-xs h-9" />
+                </div>
+              )}
             </SectionCard>
 
             {/* Pickup Info */}
