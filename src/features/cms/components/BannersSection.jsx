@@ -35,11 +35,16 @@ function BannerFormModal({
         />
       </Field>
       {/* Plain text, not type="url" - the app treats this as an in-app
-          route (e.g. "/sub-services?categoryId=2", see (tabs)/index.tsx's
-          banner tap handler), not a real URL. type="url" was rejecting
-          every relative path with the browser's native "Please enter a
-          URL" validation, blocking save entirely. */}
-      <Field label="Redirect URL"><input type="text" value={form.redirect_url} onChange={(e) => onFormChange({ redirect_url: e.target.value })} className={INPUT} placeholder="/offers/festive-sale or https://…" /></Field>
+          route, not a real URL (see (tabs)/index.tsx's handleBannerPress):
+          a path containing a number routes to that category id (e.g.
+          "/sub-services?categoryId=2"), a path containing "browse",
+          "services" or "offers" routes to the full services list (for a
+          general/non-category-specific banner like a first-order
+          discount), and anything else falls back to the first category.
+          type="url" was previously rejecting every relative path with the
+          browser's native "Please enter a URL" validation, blocking save
+          entirely. */}
+      <Field label="Redirect URL"><input type="text" value={form.redirect_url} onChange={(e) => onFormChange({ redirect_url: e.target.value })} className={INPUT} placeholder="/services or /sub-services?categoryId=2" /></Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Display Order"><input type="number" value={form.display_order} onChange={(e) => onFormChange({ display_order: e.target.value })} className={INPUT} /></Field>
         <Field label="Valid Until"><input type="date" value={form.valid_until} onChange={(e) => onFormChange({ valid_until: e.target.value })} className={INPUT + " [color-scheme:light]"} /></Field>
