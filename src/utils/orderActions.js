@@ -483,12 +483,34 @@ export function getOrderActions(role, order, payment) {
   // it done, waiting on a delivery partner) or out_for_delivery (a
   // delivery attempt already started but got stuck) - matching the
   // tightened backend gate in order_force_service.py exactly.
+  //
+  // Bug fix #2: even with that status gate, the button showed the INSTANT
+  // an order reached ready_for_dispatch - before the automatic delivery
+  // broadcast (status_service.py's initiate_delivery_broadcast, fired on
+  // this same transition) had any real chance to find a Bridge employee.
+  // An admin reported this as "nonsense" - correctly, since offering the
+  // override lever with equal prominence to the normal "Assign Delivery
+  // Employee" button, before the normal path has even been tried, defeats
+  // the point of it being an override. The backend has no broadcast-
+  // attempt-count field exposed yet, so this uses the order's own
+  // UpdatedAt (reliably refreshed on every status transition by
+  // record_order_status, order_tracking_service.py:46) as a proxy: only
+  // ready_for_dispatch waits out a grace window matching the broadcast
+  // system's own round timing before Force Deliver appears at all -
+  // out_for_delivery is exempt since reaching that status already implies
+  // a Bridge employee accepted and something went wrong afterward, not
+  // "the normal path hasn't been tried yet".
   const ADMIN_STAFF_ROLES = new Set([ROLE.ADMIN, ROLE.SUPERADMIN]);
   const FORCE_DELIVERABLE_FROM = new Set([
     ORDER_STATUS.READY_FOR_DISPATCH,
     ORDER_STATUS.OUT_FOR_DELIVERY,
   ]);
-  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status)) {
+  const FORCE_DELIVER_GRACE_MS = 15 * 60 * 1000; // matches broadcast round cadence, not tuned precisely
+  const readyForDispatchTooSoon =
+    status === ORDER_STATUS.READY_FOR_DISPATCH &&
+    order.UpdatedAt &&
+    Date.now() - new Date(order.UpdatedAt).getTime() < FORCE_DELIVER_GRACE_MS;
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status) && !readyForDispatchTooSoon) {
     actions.push({
       id: "force_deliver_order",
       label: "Force Deliver (Admin Override)",
@@ -502,7 +524,7 @@ export function getOrderActions(role, order, payment) {
   }
   // ── same override pattern as complete_order_override below: force-deliver
   // with a stuck balance, writing it off instead of staying hard-blocked ──
-  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status) && remaining > 0) {
+  if (ADMIN_STAFF_ROLES.has(role) && FORCE_DELIVERABLE_FROM.has(status) && !readyForDispatchTooSoon && remaining > 0) {
     actions.push({
       id: "force_deliver_order_write_off",
       label: `Force Deliver Anyway (₹${remaining} Unpaid)`,
