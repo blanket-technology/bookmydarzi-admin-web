@@ -354,6 +354,39 @@ export default function OrderFullDetailsPage() {
       .finally(() => setLoadingOrder(false));
   }, [orderId]);
   /* eslint-enable react-hooks/set-state-in-effect */
+
+  // Bug fix: this page had no live-refresh listener at all - an admin
+  // sitting on this exact order's detail page never saw a status change
+  // (e.g. a customer reporting an issue, or any other live transition)
+  // without manually reloading. Mirrors useOrderList.js's identical
+  // pattern (adminWsService.js dispatches every WS frame as a window
+  // CustomEvent `bmd:${event}`). Silent background refetch via the GET
+  // endpoint directly (not the `refresh` callback defined below, which
+  // isn't declared yet at this point in the component and would need to
+  // be in this effect's dependency array, re-subscribing on every
+  // `order` state change) - filters on the event's own order_id when
+  // present so an unrelated order's update doesn't trigger a refetch here.
+  useEffect(() => {
+    if (!orderId) return;
+    const onLiveEvent = (e) => {
+      const eventOrderId = e?.detail?.order_id ?? e?.detail?.data?.order_id;
+      if (eventOrderId != null && String(eventOrderId) !== String(orderId)) return;
+      api.get(`/orders/${orderId}`)
+        .then((res) => {
+          if (res.data) setOrder(res.data);
+        })
+        .catch(() => {
+          // Silent - the next live event or a manual reload will retry.
+        });
+    };
+    window.addEventListener("bmd:ORDER_STATUS_UPDATED", onLiveEvent);
+    window.addEventListener("bmd:NOTIFICATION", onLiveEvent);
+    return () => {
+      window.removeEventListener("bmd:ORDER_STATUS_UPDATED", onLiveEvent);
+      window.removeEventListener("bmd:NOTIFICATION", onLiveEvent);
+    };
+  }, [orderId]);
+
   const [tailors, setTailors] = useState([]);
   const [selectedTailorId, setSelectedTailorId] = useState("");
   const [bridgeEmployees, setBridgeEmployees] = useState([]);
