@@ -171,15 +171,36 @@ const JOURNEY = [
   { key: "pickup",    label: "Picked Up",    match: ["pickup_pending", "pickup_scheduled", "picked_up", "cloth_received_by_tailor"] },
   { key: "stitching", label: "Stitching",    match: ["stitching_started", "in_progress", "final_check", "ready_for_dispatch"] },
   { key: "delivery",  label: "Out for Delivery", match: ["out_for_delivery"] },
-  // inspection_window/in_repair/repair_completed are the post-delivery
+  // inspection_window/in_repair/repair_completed (and the repair-pickup/
+  // repair-delivery Bridge legs between them) are the post-delivery
   // report-an-issue loop (app/constants/order_status.py) - all still
   // "Delivered" from a fulfillment-journey standpoint (the order has
   // genuinely been delivered, may just be mid-repair). Without these,
   // journeyIndex() returned -1 for any order in this loop and the stepper
   // showed the ENTIRE journey as not-yet-started for an order that had
   // actually completed delivery - same bug class as cloth_received_by_tailor
-  // above, just for a different gap in status coverage.
-  { key: "done",      label: "Delivered",    match: ["delivered", "completed", "inspection_window", "in_repair", "repair_completed"] },
+  // above, just for a different gap in status coverage. The real sub-status
+  // (e.g. "Picking up for repair") is still visible elsewhere on the page
+  // (header badge, Internal Status row) - same STEP_SUBLABELS treatment as
+  // the "Stitching" step above.
+  {
+    key: "done",
+    label: "Delivered",
+    match: [
+      "delivered",
+      "completed",
+      "inspection_window",
+      "in_repair",
+      "repair_pickup_pending",
+      "repair_pickup_scheduled",
+      "repair_pickup_in_transit",
+      "at_tailor_for_repair",
+      "repair_completed",
+      "repair_delivery_pending",
+      "repair_delivery_scheduled",
+      "repair_delivery_in_transit",
+    ],
+  },
 ];
 
 function journeyIndex(status) {
@@ -203,6 +224,21 @@ const STEP_SUBLABELS = {
   in_progress: "In Progress",
   final_check: "Final Check",
   ready_for_dispatch: "Ready for Dispatch",
+  // Same "Delivered" step collapses inspection_window/in_repair/the
+  // repair-pickup/repair-delivery Bridge legs/repair_completed into one
+  // visual step (see JOURNEY above) - without a sub-label here, a repair
+  // pickup/delivery transition would read as "nothing happened" in the
+  // stepper, same bug class the Stitching sub-labels above already fix.
+  inspection_window: "Delivered",
+  in_repair: "Repair In Progress",
+  repair_pickup_pending: "Repair Pickup Pending",
+  repair_pickup_scheduled: "Repair Pickup Scheduled",
+  repair_pickup_in_transit: "Repair Pickup In Transit",
+  at_tailor_for_repair: "At Tailor For Repair",
+  repair_completed: "Repair Completed",
+  repair_delivery_pending: "Repair Delivery Pending",
+  repair_delivery_scheduled: "Repair Delivery Scheduled",
+  repair_delivery_in_transit: "Repair Delivery In Transit",
 };
 
 /** Horizontal progress stepper across the order lifecycle. Cancelled/rejected
@@ -1713,6 +1749,35 @@ export default function OrderFullDetailsPage() {
                       ? order.DeliveryEmployeeName
                         ? `${order.DeliveryEmployeeName} (#${order.DeliveryEmployeeId})`
                         : `#${order.DeliveryEmployeeId}`
+                      : "Not assigned"
+                  }
+                />
+              </SectionCard>
+            )}
+
+            {/* Repair-pickup/repair-delivery Bridge legs - same read-only
+                visibility pattern as Bridge Assignment above, only shown
+                once a repair is actually in flight (the garment physically
+                moving customer <-> tailor during a repair). */}
+            {!isTailor && (order.RepairPickupEmployeeId || order.RepairDeliveryEmployeeId) && (
+              <SectionCard icon={Bike} title="Repair Bridge Assignment" accent={theme.accent}>
+                <Fact
+                  label="Assigned For Repair Pickup"
+                  value={
+                    order.RepairPickupEmployeeId
+                      ? order.RepairPickupEmployeeName
+                        ? `${order.RepairPickupEmployeeName} (#${order.RepairPickupEmployeeId})`
+                        : `#${order.RepairPickupEmployeeId}`
+                      : "Not assigned"
+                  }
+                />
+                <Fact
+                  label="Assigned For Repair Delivery"
+                  value={
+                    order.RepairDeliveryEmployeeId
+                      ? order.RepairDeliveryEmployeeName
+                        ? `${order.RepairDeliveryEmployeeName} (#${order.RepairDeliveryEmployeeId})`
+                        : `#${order.RepairDeliveryEmployeeId}`
                       : "Not assigned"
                   }
                 />

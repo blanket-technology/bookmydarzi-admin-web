@@ -46,7 +46,19 @@ export const ORDER_STATUS = {
   // now.
   INSPECTION_WINDOW: "inspection_window",
   IN_REPAIR: "in_repair",
+  // Repair-pickup/repair-delivery Bridge legs (backend
+  // app/constants/order_status.py, added the same session as this
+  // comment) - garment physically moves customer <-> tailor during a
+  // repair, same broadcast/claim shape as the original pickup/delivery/
+  // return legs.
+  REPAIR_PICKUP_PENDING: "repair_pickup_pending",
+  REPAIR_PICKUP_SCHEDULED: "repair_pickup_scheduled",
+  REPAIR_PICKUP_IN_TRANSIT: "repair_pickup_in_transit",
+  AT_TAILOR_FOR_REPAIR: "at_tailor_for_repair",
   REPAIR_COMPLETED: "repair_completed",
+  REPAIR_DELIVERY_PENDING: "repair_delivery_pending",
+  REPAIR_DELIVERY_SCHEDULED: "repair_delivery_scheduled",
+  REPAIR_DELIVERY_IN_TRANSIT: "repair_delivery_in_transit",
   COMPLETED: "completed",
   CANCELLED: "cancelled",
   RETURN_PENDING: "return_pending",
@@ -76,7 +88,14 @@ export const STATUS_LABELS = {
   delivered: "Delivered",
   inspection_window: "Inspection Window",
   in_repair: "In Repair",
+  repair_pickup_pending: "Repair Pickup Pending",
+  repair_pickup_scheduled: "Repair Pickup Scheduled",
+  repair_pickup_in_transit: "Repair Pickup In Transit",
+  at_tailor_for_repair: "At Tailor For Repair",
   repair_completed: "Repair Completed",
+  repair_delivery_pending: "Repair Delivery Pending",
+  repair_delivery_scheduled: "Repair Delivery Scheduled",
+  repair_delivery_in_transit: "Repair Delivery In Transit",
   completed: "Completed",
   cancelled: "Cancelled",
   return_pending: "Return Pending",
@@ -599,7 +618,17 @@ export function getOrderActions(role, order, payment) {
     ORDER_STATUS.DELIVERED,
     ORDER_STATUS.INSPECTION_WINDOW,
     ORDER_STATUS.IN_REPAIR,
+    // Repair-pickup/repair-delivery Bridge legs - same reasoning as the
+    // rest of this set (matches the backend's _CONTACT_SUPPORT_STAGES
+    // exactly, cancellation_service.py).
+    ORDER_STATUS.REPAIR_PICKUP_PENDING,
+    ORDER_STATUS.REPAIR_PICKUP_SCHEDULED,
+    ORDER_STATUS.REPAIR_PICKUP_IN_TRANSIT,
+    ORDER_STATUS.AT_TAILOR_FOR_REPAIR,
     ORDER_STATUS.REPAIR_COMPLETED,
+    ORDER_STATUS.REPAIR_DELIVERY_PENDING,
+    ORDER_STATUS.REPAIR_DELIVERY_SCHEDULED,
+    ORDER_STATUS.REPAIR_DELIVERY_IN_TRANSIT,
   ]);
   if (staff && role !== ROLE.EMPLOYEE && !POST_DELIVERY_STATUSES.has(status)) {
     actions.push({
