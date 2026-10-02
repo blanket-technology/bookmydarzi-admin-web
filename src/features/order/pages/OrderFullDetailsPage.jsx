@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Fragment } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -241,13 +241,68 @@ const STEP_SUBLABELS = {
   repair_delivery_in_transit: "Repair Delivery In Transit",
 };
 
+// Bug fix: a cancelled order whose cloth was already picked up enters a
+// real post-cancellation return sub-flow on the backend (CANCELLED ->
+// RETURN_PENDING -> RETURN_SCHEDULED -> RETURN_IN_TRANSIT -> RETURNED, see
+// bmd's order_status.py TRANSITIONS) - but `status` here is the order's own
+// terminal "cancelled" the whole time; the return leg's own progress lives
+// only in order.ReturnEmployeeId plus whichever RETURN_* tracking events
+// exist, neither of which this static JOURNEY/terminated check ever looked
+// at. Every cancelled order - one sitting untouched vs. one mid-return vs.
+// one the customer has already gotten their cloth back from - rendered the
+// identical flat "Order Cancelled" banner, with zero way to tell them apart
+// from this stepper. RETURN_STAGES gives that sub-flow its own visible
+// progress, same STEP_SUBLABELS-style treatment already used for the
+// Stitching and post-delivery repair steps above.
+const RETURN_STAGES = [
+  { key: "return_pending", label: "Return Initiated" },
+  { key: "return_scheduled", label: "Return Scheduled" },
+  { key: "return_in_transit", label: "Cloth In Transit" },
+  { key: "returned", label: "Cloth Returned" },
+];
+
 /** Horizontal progress stepper across the order lifecycle. Cancelled/rejected
- * orders show a distinct "halted" state instead of the journey. */
+ * orders show a distinct "halted" state instead of the journey - unless a
+ * return sub-flow (see RETURN_STAGES) is active/complete, in which case
+ * that gets its own mini-stepper instead of a flat banner. */
 function StatusStepper({ status }) {
   const terminated = ["cancelled", "order_rejected"].includes(status);
   const current = journeyIndex(status);
+  const returnIndex = RETURN_STAGES.findIndex((s) => s.key === status);
 
-  if (terminated) {
+  if (terminated || returnIndex >= 0) {
+    if (returnIndex >= 0) {
+      return (
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
+            <p className="text-sm font-semibold text-rose-700">Order Cancelled</p>
+            <span className="text-xs text-gray-400">- cloth return in progress</span>
+          </div>
+          <div className="mt-3 flex items-center gap-2">
+            {RETURN_STAGES.map((stage, i) => (
+              <Fragment key={stage.key}>
+                <span
+                  className={`text-xs font-semibold px-2.5 py-1 rounded-full ${
+                    i < returnIndex
+                      ? "bg-teal-50 text-teal-700"
+                      : i === returnIndex
+                        ? "bg-teal-600 text-white"
+                        : "bg-gray-100 text-gray-400"
+                  }`}
+                >
+                  {stage.label}
+                </span>
+                {i < RETURN_STAGES.length - 1 && (
+                  <span className={`h-0.5 w-5 rounded-full ${i < returnIndex ? "bg-teal-400" : "bg-gray-200"}`} />
+                )}
+              </Fragment>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm px-5 py-4 flex items-center gap-3">
         <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
