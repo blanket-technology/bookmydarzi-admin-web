@@ -238,7 +238,17 @@ export default function AddTailorPage() {
                       label="Pincode"
                       placeholder="e.g. 462001"
                       value={form.pincode}
-                      onChange={onChange}
+                      // Bug fix: this field previously accepted any
+                      // free-text string (letters, arbitrary length) - the
+                      // same shared onChange every other field here uses.
+                      // Pincodes are specifically numeric and exactly 6
+                      // digits in India, so bad input here only ever
+                      // surfaced as a backend validation error later
+                      // instead of being caught at entry.
+                      onChange={(e) => {
+                        const digitsOnly = e.target.value.replace(/\D/g, "").slice(0, 6);
+                        onChange({ target: { name: "pincode", value: digitsOnly } });
+                      }}
                       required={false}
                       touched={false}
                     />
