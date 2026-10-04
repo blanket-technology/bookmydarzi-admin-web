@@ -18,4 +18,16 @@ export default defineConfig([
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
   },
+  // Firebase Cloud Messaging service worker - runs in the ServiceWorker
+  // global scope (importScripts/clients), not the browser window scope
+  // every other file in this project uses. `firebase` itself comes from
+  // the importScripts() calls at the top of this file (there's no build
+  // step for service workers, so it can't be a normal import) - a true
+  // runtime global ESLint's static analysis can't see on its own.
+  {
+    files: ['public/firebase-messaging-sw.js'],
+    languageOptions: {
+      globals: { ...globals.serviceworker, firebase: 'readonly' },
+    },
+  },
 ])

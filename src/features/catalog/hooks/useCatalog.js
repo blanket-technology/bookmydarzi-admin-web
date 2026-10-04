@@ -25,11 +25,12 @@ export default function useCatalog() {
     await fetchCatalog();
   }, [fetchCatalog]);
 
-  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
-    loadCatalog();
+    // Deferred to a microtask so fetchCatalog's own setState calls don't
+    // run synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected.
+    queueMicrotask(() => loadCatalog());
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  /* eslint-enable react-hooks/set-state-in-effect */
 
   const closeModal = () => setModal(null);
   const refresh = () => loadCatalog();

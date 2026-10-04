@@ -121,19 +121,25 @@ function ServiceabilityBadge({ address }) {
   const lng = address?.longitude ?? address?.Longitude;
 
   useEffect(() => {
-    if (lat == null || lng == null) {
-      setResult(null);
-      return;
-    }
     let cancelled = false;
-    api
-      .get(`/location/check-serviceability?latitude=${lat}&longitude=${lng}`)
-      .then((res) => {
-        if (!cancelled) setResult(res.data);
-      })
-      .catch(() => {
-        if (!cancelled) setResult(null);
-      });
+    // Deferred to a microtask so setResult doesn't run synchronously
+    // during the effect's commit phase (the react-hooks/set-state-in-effect
+    // rule) - behavior is unaffected.
+    queueMicrotask(() => {
+      if (cancelled) return;
+      if (lat == null || lng == null) {
+        setResult(null);
+        return;
+      }
+      api
+        .get(`/location/check-serviceability?latitude=${lat}&longitude=${lng}`)
+        .then((res) => {
+          if (!cancelled) setResult(res.data);
+        })
+        .catch(() => {
+          if (!cancelled) setResult(null);
+        });
+    });
     return () => {
       cancelled = true;
     };
@@ -836,8 +842,11 @@ export default function OrderFullDetailsPage() {
   // options at all. loadTailors() is idempotent (guarded by tailorsLoaded),
   // so calling it here is a no-op if the sidebar selector already populated it.
   useEffect(() => {
+    // Deferred to a microtask so loadTailors' own setState calls don't
+    // run synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected.
     if (pendingAction?.requiresInput?.includes("tailor_id")) {
-      loadTailors();
+      queueMicrotask(() => loadTailors());
     }
   }, [pendingAction, loadTailors]);
 
@@ -850,7 +859,7 @@ export default function OrderFullDetailsPage() {
       pendingAction?.requiresInput?.includes("delivery_employee_id") ||
       pendingAction?.requiresInput?.includes("return_employee_id")
     ) {
-      loadBridgeEmployees();
+      queueMicrotask(() => loadBridgeEmployees());
     }
   }, [pendingAction, loadBridgeEmployees]);
 

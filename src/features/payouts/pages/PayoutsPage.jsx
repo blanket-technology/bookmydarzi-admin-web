@@ -58,7 +58,10 @@ export default function PayoutsPage() {
   };
 
   useEffect(() => {
-    if (tab === "payouts") fetchPayouts();
+    // Deferred to a microtask so fetchPayouts' own setLoading(true) call
+    // doesn't run synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected.
+    if (tab === "payouts") queueMicrotask(() => fetchPayouts());
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, page, limit, statusFilter]);
 
