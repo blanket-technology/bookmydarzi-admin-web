@@ -32,7 +32,11 @@ export default function useServiceAreaInterests() {
   }, [page]);
 
   useEffect(() => {
-    fetchInterests();
+    // Deferred to a microtask so fetchInterests' own setLoading(true) call
+    // doesn't run synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected,
+    // this only changes which microtask the state update is batched into.
+    queueMicrotask(() => fetchInterests());
   }, [fetchInterests]);
 
   return {

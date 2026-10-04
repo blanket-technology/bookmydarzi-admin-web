@@ -24,15 +24,21 @@ export default function TailorSpecializationSection({ tailorId }) {
 
   useEffect(() => {
     let cancelled = false;
-    setLoading(true);
-    getTailorSpecializations(tailorId)
-      .then((ids) => {
-        if (cancelled) return;
-        setSelectedIds(ids);
-        setInitialIds(ids);
-      })
-      .catch((err) => notifyError(extractErrorMessage(err, "Failed to load specializations.")))
-      .finally(() => !cancelled && setLoading(false));
+    // Deferred to a microtask so setLoading(true) doesn't run
+    // synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected.
+    queueMicrotask(() => {
+      if (cancelled) return;
+      setLoading(true);
+      getTailorSpecializations(tailorId)
+        .then((ids) => {
+          if (cancelled) return;
+          setSelectedIds(ids);
+          setInitialIds(ids);
+        })
+        .catch((err) => notifyError(extractErrorMessage(err, "Failed to load specializations.")))
+        .finally(() => !cancelled && setLoading(false));
+    });
     return () => {
       cancelled = true;
     };

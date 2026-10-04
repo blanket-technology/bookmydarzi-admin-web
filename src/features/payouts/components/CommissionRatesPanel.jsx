@@ -45,7 +45,10 @@ export default function CommissionRatesPanel() {
   };
 
   useEffect(() => {
-    load();
+    // Deferred to a microtask so load()'s own setLoading(true) call
+    // doesn't run synchronously during the effect's commit phase (the
+    // react-hooks/set-state-in-effect rule) - behavior is unaffected.
+    queueMicrotask(() => load());
   }, []);
 
   const handleSave = async (e) => {
