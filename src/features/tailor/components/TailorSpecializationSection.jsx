@@ -55,6 +55,57 @@ export default function TailorSpecializationSection({ tailorId }) {
       .filter((c) => c.services.length > 0);
   }, [categories]);
 
+  // Quick-select: Women/Men/Kids + Designer toggles that bulk-check the
+  // matching individual service boxes below, instead of making admin
+  // hand-pick 7-8 checkboxes per category. Category match is by name
+  // prefix since that's the only stable signal available here (the
+  // catalog payload has no separate gender field) - "Mens Clothing"/
+  // "Women Clothing"/"Kids Clothing" are the live category names
+  // (see canonical_service_ids.py's own comment about the "Mens" vs "Men"
+  // naming mismatch). Stitching tier is inferred from the service name
+  // ("Normal Stitching" vs "Designer Stitching"), the only place that
+  // distinction is exposed in this payload.
+  const quickSelectGroups = useMemo(() => {
+    const matchers = [
+      { key: "men", label: "Men", test: (name) => /^mens?\s+clothing/i.test(name) },
+      { key: "women", label: "Women", test: (name) => /^women'?s?\s+clothing/i.test(name) },
+      { key: "kids", label: "Kids", test: (name) => /^kids?\s+clothing/i.test(name) },
+    ];
+    return matchers
+      .map((m) => {
+        const category = groupedCategories.find((c) => m.test(c.name));
+        if (!category) return null;
+        const normalIds = category.services
+          .filter((s) => /normal stitching/i.test(s.name))
+          .map((s) => Number(s.service_id));
+        const designerIds = category.services
+          .filter((s) => /designer stitching/i.test(s.name))
+          .map((s) => Number(s.service_id));
+        if (normalIds.length === 0 && designerIds.length === 0) return null;
+        return { ...m, normalIds, designerIds };
+      })
+      .filter(Boolean);
+  }, [groupedCategories]);
+
+  const [designerStitching, setDesignerStitching] = useState(false);
+
+  const applyQuickSelect = (group) => {
+    const idsForGroup = designerStitching
+      ? [...group.normalIds, ...group.designerIds]
+      : group.normalIds;
+    const isFullyApplied = idsForGroup.every((id) => selectedIds.includes(id));
+    setSelectedIds((prev) => {
+      if (isFullyApplied) {
+        // Toggling off: remove this group's normal+designer ids only.
+        const allGroupIds = new Set([...group.normalIds, ...group.designerIds]);
+        return prev.filter((id) => !allGroupIds.has(id));
+      }
+      const next = new Set(prev);
+      idsForGroup.forEach((id) => next.add(id));
+      return Array.from(next);
+    });
+  };
+
   const toggleCategory = (categoryId) => {
     setExpandedCategoryIds((prev) => {
       const next = new Set(prev);
@@ -126,6 +177,41 @@ export default function TailorSpecializationSection({ tailorId }) {
           Save
         </button>
       </div>
+
+      {quickSelectGroups.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 pb-3 border-b border-gray-100">
+          <span className="text-xs font-semibold text-gray-500 mr-1">Quick select:</span>
+          {quickSelectGroups.map((group) => {
+            const idsForGroup = designerStitching
+              ? [...group.normalIds, ...group.designerIds]
+              : group.normalIds;
+            const active = idsForGroup.length > 0 && idsForGroup.every((id) => selectedIds.includes(id));
+            return (
+              <button
+                key={group.key}
+                type="button"
+                onClick={() => applyQuickSelect(group)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors ${
+                  active
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "bg-white text-gray-600 border-gray-200 hover:border-teal-300"
+                }`}
+              >
+                {group.label}
+              </button>
+            );
+          })}
+          <label className="flex items-center gap-1.5 text-xs font-semibold text-gray-600 ml-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={designerStitching}
+              onChange={(e) => setDesignerStitching(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-gray-300 text-teal-600 focus:ring-teal-500"
+            />
+            Designer stitching
+          </label>
+        </div>
+      )}
 
       {groupedCategories.length === 0 ? (
         <p className="text-sm text-gray-400">No active catalog categories found.</p>
