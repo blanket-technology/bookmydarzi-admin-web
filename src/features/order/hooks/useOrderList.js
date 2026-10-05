@@ -19,7 +19,6 @@ const LIVE_ORDER_EVENTS = ["bmd:NEW_ORDER", "bmd:ORDER_STATUS_UPDATED", "bmd:NOT
 export default function useOrderList() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialStatus = searchParams.get("status") || "";
   const token = sessionStorage.getItem("access_token");
 
   const filterStatus = useOrderListStore((s) => s.filterStatus);
@@ -66,12 +65,6 @@ export default function useOrderList() {
   useEffect(() => {
     if (!token) navigate("/", { replace: true });
   }, [token, navigate]);
-
-  useEffect(() => {
-    if (initialStatus && !useOrderListStore.getState().filterStatus) {
-      setFilterStatus(initialStatus);
-    }
-  }, [initialStatus, setFilterStatus]);
 
   useEffect(() => {
     setDebouncedSearch(debouncedSearch);
