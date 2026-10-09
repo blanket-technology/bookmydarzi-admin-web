@@ -11,12 +11,12 @@ export async function getChatAnalytics() {
 }
 
 export async function getAgentStatus() {
-  const response = await api.get("/admin/agents/me/status");
+  const response = await api.get("/admin/chat/agents/me/status");
   return response.data;
 }
 
 export async function updateAgentStatus(agentId, status) {
-  const response = await api.patch(`/admin/agents/${agentId}/status?status=${status}`);
+  const response = await api.patch(`/admin/chat/agents/${agentId}/status?status=${status}`);
   return response.data;
 }
 
