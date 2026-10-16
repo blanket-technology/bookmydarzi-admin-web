@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Loader2, ImagePlus, Pencil, X, Link2 } from "lucide-react";
+import { Loader2, ImagePlus, Pencil, X, Link2, Crop } from "lucide-react";
 import api, { resolveMediaUrl } from "../../services/api";
 import { extractErrorMessage } from "../../utils/formatters";
 import ImageCropModal from "./ImageCropModal";
@@ -25,7 +25,31 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
   const [dragOver, setDragOver] = useState(false);
   const [urlMode, setUrlMode] = useState(false);
   const [pendingFile, setPendingFile] = useState(null);
+  const [fetchingExisting, setFetchingExisting] = useState(false);
   const fileRef = useRef(null);
+
+  // Lets admin re-crop an image that's already uploaded (already a saved
+  // URL, not a freshly-picked local file) - fetches it back into a File so
+  // it can go through the same ImageCropModal/upload path as a brand-new
+  // pick. ImageKit (where these are hosted) serves with Access-Control-
+  // Allow-Origin: * so this fetch works cross-origin without a proxy.
+  const cropExisting = async () => {
+    const url = resolveMediaUrl(value);
+    if (!url) return;
+    setFetchingExisting(true);
+    setUploadError("");
+    try {
+      const res = await fetch(url, { mode: "cors" });
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const filename = url.split("/").pop()?.split("?")[0] || "image.jpg";
+      setPendingFile(new File([blob], filename, { type: blob.type || "image/jpeg" }));
+    } catch {
+      setUploadError("Couldn't load this image for cropping. Try replacing it instead.");
+    } finally {
+      setFetchingExisting(false);
+    }
+  };
 
   const uploadFile = async (file) => {
     if (!file) return;
@@ -80,15 +104,26 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
               onError={(e) => { e.target.style.display = "none"; }}
             />
             <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-black/0 to-black/0 p-3 opacity-0 transition-opacity hover:opacity-100">
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                disabled={uploading}
-                className="flex items-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-white disabled:opacity-50"
-              >
-                {uploading ? <Loader2 size={13} className="animate-spin" /> : <Pencil size={13} />}
-                {uploading ? "Uploading…" : "Replace"}
-              </button>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={cropExisting}
+                  disabled={uploading || fetchingExisting}
+                  className="flex items-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-white disabled:opacity-50"
+                >
+                  {fetchingExisting ? <Loader2 size={13} className="animate-spin" /> : <Crop size={13} />}
+                  {fetchingExisting ? "Loading…" : "Crop"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fileRef.current?.click()}
+                  disabled={uploading}
+                  className="flex items-center gap-1.5 rounded-lg bg-white/95 px-3 py-1.5 text-xs font-semibold text-gray-700 hover:bg-white disabled:opacity-50"
+                >
+                  {uploading ? <Loader2 size={13} className="animate-spin" /> : <Pencil size={13} />}
+                  {uploading ? "Uploading…" : "Replace"}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => onChange("")}
