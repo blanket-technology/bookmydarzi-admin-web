@@ -2,6 +2,7 @@ import { useRef, useState } from "react";
 import { Loader2, ImagePlus, Pencil, X, Link2 } from "lucide-react";
 import api, { resolveMediaUrl } from "../../services/api";
 import { extractErrorMessage } from "../../utils/formatters";
+import ImageCropModal from "./ImageCropModal";
 
 const urlInputClass =
   "w-full border-2 border-gray-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-teal-500";
@@ -23,6 +24,7 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
   const [uploadError, setUploadError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [urlMode, setUrlMode] = useState(false);
+  const [pendingFile, setPendingFile] = useState(null);
   const fileRef = useRef(null);
 
   const uploadFile = async (file) => {
@@ -44,7 +46,7 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
 
   const handleFileChange = (e) => {
     const file = e.target.files?.[0];
-    uploadFile(file);
+    if (file) setPendingFile(file);
     e.target.value = "";
   };
 
@@ -52,7 +54,7 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) uploadFile(file);
+    if (file && file.type.startsWith("image/")) setPendingFile(file);
   };
 
   return (
@@ -144,6 +146,17 @@ export default function ImageUploadField({ value, onChange, uploadPath }) {
           onChange={(e) => onChange(e.target.value)}
           placeholder="https://…"
           autoFocus
+        />
+      )}
+
+      {pendingFile && (
+        <ImageCropModal
+          file={pendingFile}
+          onCancel={() => setPendingFile(null)}
+          onCropped={(croppedFile) => {
+            setPendingFile(null);
+            uploadFile(croppedFile);
+          }}
         />
       )}
     </div>

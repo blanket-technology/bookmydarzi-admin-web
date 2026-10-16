@@ -294,8 +294,8 @@ export default function OrderDetailsPage() {
             <thead className="bg-brand text-white">
               <tr>
                 <th className="px-4 py-3 text-center font-semibold">S.No.</th>
-                <th className="px-4 py-3 text-left font-semibold">Order Code</th>
-                <th className="px-4 py-3 text-left font-semibold">Customer</th>
+                <th className="px-4 py-3 text-left font-semibold">Order ID</th>
+                <th className="px-4 py-3 text-left font-semibold">Customer Name</th>
                 <th className="px-4 py-3 text-left font-semibold">Date</th>
                 <th className="px-4 py-3 text-left font-semibold">Service / City</th>
                 <th className="px-4 py-3 text-left font-semibold">Tailor</th>
