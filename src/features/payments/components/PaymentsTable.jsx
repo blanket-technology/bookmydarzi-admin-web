@@ -4,7 +4,9 @@ import StatusBadge from "../../../components/common/StatusBadge.jsx";
 import { paymentStatusLabel } from "../constants/paymentConstants.js";
 import { applySort, nextSortState } from "../../../utils/tableSort.js";
 
-const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "advance_pending"]);
+// payment_pending is the current name (BUG-118 rename); advance_pending is
+// kept for historical orders created before the rename.
+const RECONCILABLE_STATUSES = new Set(["initiated", "pending", "payment_pending", "advance_pending"]);
 
 // Only money columns are worth sorting here - Order/Service are identifiers/
 // labels an ops person scans, not orders, and Payment Status is already a

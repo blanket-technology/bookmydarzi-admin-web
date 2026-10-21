@@ -9,6 +9,9 @@ const COLORS = {
   rejected:         "bg-rose-100 text-rose-700",
   approved:         "bg-emerald-100 text-emerald-700",
   // Payments
+  // payment_pending is the current name (BUG-118 rename); advance_pending
+  // is kept for historical orders created before the rename.
+  payment_pending:  "bg-amber-100 text-amber-700",
   advance_pending:  "bg-amber-100 text-amber-700",
   advance_paid:     "bg-blue-100 text-blue-700",
   fully_paid:       "bg-emerald-100 text-emerald-700",

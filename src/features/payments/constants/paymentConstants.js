@@ -3,6 +3,9 @@ export const STATUS_BADGE = {
   advance_paid: "bg-blue-100 text-blue-700",
   fully_paid: "bg-emerald-100 text-emerald-700",
   failed: "bg-rose-100 text-rose-700",
+  // payment_pending is the current name (BUG-118 rename); advance_pending
+  // is kept for historical orders created before the rename.
+  payment_pending: "bg-amber-100 text-amber-700",
   advance_pending: "bg-amber-100 text-amber-700",
   balance_pending: "bg-orange-100 text-orange-700",
   advance_failed: "bg-rose-100 text-rose-700",
@@ -31,6 +34,9 @@ export const OVERRIDE_STATUSES = ["initiated", "success", "failed", "pending"];
 // drifting into "Payment Pending" in one place and "Pending" in another.
 export const PAYMENT_STATUS_LABELS = {
   // Order-level SettlementStatus
+  // payment_pending is the current name (BUG-118 rename); advance_pending
+  // is kept for historical orders created before the rename.
+  payment_pending: "Online Payment Pending",
   advance_pending: "Online Payment Pending",
   advance_paid: "Paid",
   fully_paid: "Paid",
