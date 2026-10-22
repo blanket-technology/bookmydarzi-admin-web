@@ -23,6 +23,15 @@ export default function RefundModal({ orderId, onClose, onDone }) {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
 
+  // Manual-refund fallback (failed Razorpay refund, admin already paid the
+  // customer themselves) - inline per-row form rather than a second
+  // FormModal, since this modal only supports one submit action at a time.
+  const [manualTargetId, setManualTargetId] = useState(null);
+  const [manualReference, setManualReference] = useState("");
+  const [manualNote, setManualNote] = useState("");
+  const [manualSubmitting, setManualSubmitting] = useState(false);
+  const [manualError, setManualError] = useState("");
+
   useEffect(() => {
     const load = async () => {
       try {
@@ -64,6 +73,31 @@ export default function RefundModal({ orderId, onClose, onDone }) {
   const refundable = calculateRefundableAmount(payment, refunds);
   const pmtId = getPaymentId(payment);
   const canRefund = payment && payment.Status === "success" && refundable > 0;
+
+  const handleMarkManual = async (refundId) => {
+    if (!pmtId || !manualReference.trim()) return;
+    setManualSubmitting(true);
+    setManualError("");
+    try {
+      await paymentService.markRefundManual(pmtId, refundId, {
+        reference: manualReference.trim(),
+        note: manualNote.trim() || undefined,
+      });
+      setManualTargetId(null);
+      setManualReference("");
+      setManualNote("");
+      // Modal stays open (unlike handleSubmit, which closes after a normal
+      // refund) - refetch refund history locally so "Already refunded" and
+      // the status badge update in place, not just the parent's order list.
+      const refundList = await paymentService.getRefunds(pmtId);
+      setRefunds(refundList);
+      onDone();
+    } catch (err) {
+      setManualError(extractErrorMessage(err, "Could not mark as manually refunded."));
+    } finally {
+      setManualSubmitting(false);
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -144,12 +178,73 @@ export default function RefundModal({ orderId, onClose, onDone }) {
               <p className="text-xs font-semibold text-gray-500 mb-1.5">Refund history</p>
               <div className="space-y-1">
                 {refunds.map((r) => (
-                  <div key={r.id} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded-lg text-xs">
-                    <span className="font-mono text-gray-500">{r.refund_code || `#${r.id}`}</span>
-                    <span className="font-semibold text-gray-700">₹{parseFloat(r.amount).toFixed(2)}</span>
-                    <span className={`px-1.5 py-0.5 rounded-full font-semibold ${r.status === "processed" ? "bg-emerald-100 text-emerald-700" : r.status === "failed" ? "bg-rose-100 text-rose-700" : "bg-yellow-100 text-yellow-700"}`}>
-                      {r.status}
-                    </span>
+                  <div key={r.id} className="bg-gray-50 px-3 py-2 rounded-lg text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-mono text-gray-500">{r.refund_code || `#${r.id}`}</span>
+                      <span className="font-semibold text-gray-700">₹{parseFloat(r.amount).toFixed(2)}</span>
+                      <span className={`px-1.5 py-0.5 rounded-full font-semibold ${
+                        r.status === "processed" || r.status === "manual_completed"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : r.status === "failed"
+                          ? "bg-rose-100 text-rose-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {r.status}
+                      </span>
+                    </div>
+                    {r.status === "manual_completed" && r.manual_reference && (
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        Manually refunded · ref: <span className="font-mono">{r.manual_reference}</span>
+                      </p>
+                    )}
+                    {r.status === "failed" && manualTargetId !== r.id && (
+                      <button
+                        type="button"
+                        onClick={() => { setManualTargetId(r.id); setManualError(""); }}
+                        className="mt-1.5 text-[11px] font-semibold text-teal-700 hover:text-teal-800"
+                      >
+                        Mark as manually refunded
+                      </button>
+                    )}
+                    {manualTargetId === r.id && (
+                      <div className="mt-2 space-y-1.5 border-t border-gray-200 pt-2">
+                        <p className="text-[11px] text-gray-500">
+                          Use this only after you've already paid the customer yourself (UPI/bank transfer). This does not send money - it just records what you paid.
+                        </p>
+                        <input
+                          type="text"
+                          className={inp}
+                          placeholder="UPI / bank transaction reference (required)"
+                          value={manualReference}
+                          onChange={(e) => setManualReference(e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          className={inp}
+                          placeholder="Note (optional)"
+                          value={manualNote}
+                          onChange={(e) => setManualNote(e.target.value)}
+                        />
+                        {manualError && <p className="text-[11px] text-rose-600">{manualError}</p>}
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            disabled={manualSubmitting || !manualReference.trim()}
+                            onClick={() => handleMarkManual(r.id)}
+                            className="flex-1 text-[11px] font-semibold bg-teal-600 text-white rounded-lg py-1.5 disabled:opacity-50"
+                          >
+                            {manualSubmitting ? "Saving..." : "Confirm"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setManualTargetId(null); setManualReference(""); setManualNote(""); setManualError(""); }}
+                            className="flex-1 text-[11px] font-semibold bg-gray-200 text-gray-700 rounded-lg py-1.5"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

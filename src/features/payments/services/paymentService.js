@@ -21,6 +21,17 @@ export async function issueRefund(paymentId, payload) {
   return response.data;
 }
 
+/** Fallback for a refund the Razorpay gateway could not process - does NOT
+ * send money anywhere. The admin has already paid the customer manually
+ * (UPI/bank transfer via their own banking, outside this app - no
+ * payout-provider integration is configured here) and this just records
+ * the reference they paid against. Only valid on a refund currently
+ * "failed" (backend-enforced; see refund_service.mark_refund_manual). */
+export async function markRefundManual(paymentId, refundId, payload) {
+  const response = await api.post(`/payments/${paymentId}/refund/${refundId}/manual`, payload);
+  return response.data;
+}
+
 export async function overridePaymentStatus(paymentId, payload) {
   const response = await api.patch(`/payments/${paymentId}/status`, payload);
   return response.data;
