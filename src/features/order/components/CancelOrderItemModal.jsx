@@ -97,22 +97,15 @@ export default function CancelOrderItemModal({ orderId, item, onClose, onConfirm
               <span className="text-gray-500">Payment type</span>
               <span className="font-semibold text-gray-800 capitalize">{preview.payment_type}</span>
             </div>
-            <div className="flex justify-between">
-              <span className="text-gray-500">Penalty</span>
-              <span className={`font-semibold ${preview.penalty_amount > 0 ? "text-rose-600" : "text-gray-800"}`}>
-                {preview.penalty_amount > 0 ? formatCurrency(preview.penalty_amount) : "None"}
-              </span>
-            </div>
             {preview.payment_type === "prepaid" ? (
               <div className="flex justify-between pt-1 border-t border-gray-200">
                 <span className="text-gray-600 font-semibold">Refund to customer</span>
                 <span className="font-bold text-teal-700">{formatCurrency(preview.refund_amount)}</span>
               </div>
-            ) : preview.penalty_amount > 0 ? (
-              <p className="text-gray-500 pt-1 border-t border-gray-200">
-                No upfront payment was collected — this penalty will be applied to the customer's next order.
-              </p>
             ) : null}
+            <p className="text-gray-500 pt-1 border-t border-gray-200">
+              Cancelling a single item is always free - no cancellation charge.
+            </p>
           </div>
         ) : null}
 
