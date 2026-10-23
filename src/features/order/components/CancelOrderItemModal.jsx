@@ -1,8 +1,21 @@
 import { useEffect, useState } from "react";
-import { Trash2, Loader2, AlertTriangle } from "lucide-react";
+import { X, Loader2, AlertTriangle } from "lucide-react";
 import { formatCurrency } from "../../../utils/formatters.js";
 import { extractErrorMessage } from "../../../utils/formatters.js";
 import { getAdminItemCancellationPreview } from "../services/orderService.js";
+
+// Same quick-pick reasons as the customer-facing cancel modals (web +
+// app) and the admin app's cancel sheet - kept identical everywhere so
+// this feels like one consistent flow regardless of which app someone is
+// cancelling from.
+const CANCEL_ITEM_REASONS = [
+  "Ordered by mistake",
+  "Found a better price elsewhere",
+  "No longer needed",
+  "Taking too long",
+  "Wrong size or measurement",
+  "Other",
+];
 
 // Per-item sibling of CancelOrderModal.jsx - cancels ONE line item within
 // a multi-item order, without cancelling the whole order. Only usable in
@@ -15,6 +28,7 @@ const MIN_REASON_LENGTH = 5;
 
 export default function CancelOrderItemModal({ orderId, item, onClose, onConfirm, submitting }) {
   const [reason, setReason] = useState("");
+  const [selectedReason, setSelectedReason] = useState(null);
   // preview/previewError/previewFor move together as one result object keyed
   // by the (orderId, itemId) pair it was fetched for, so "loading" is simply
   // "the current target doesn't match what we last fetched for" - avoids a
@@ -50,11 +64,11 @@ export default function CancelOrderItemModal({ orderId, item, onClose, onConfirm
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-xl bg-rose-100 flex items-center justify-center shrink-0">
-            <Trash2 size={18} className="text-rose-600" />
+          <div className="w-11 h-11 rounded-full bg-rose-100 flex items-center justify-center shrink-0">
+            <X size={20} className="text-rose-600" />
           </div>
           <div className="min-w-0">
-            <h3 className="font-bold text-gray-800">Cancel Item</h3>
+            <h3 className="font-bold text-gray-800">Cancel this item?</h3>
             <p className="text-xs text-gray-500 mt-0.5 truncate">{item.service_name || `Item #${item.order_item_id}`}</p>
           </div>
         </div>
@@ -104,12 +118,37 @@ export default function CancelOrderItemModal({ orderId, item, onClose, onConfirm
 
         {!blocked && (
           <>
-            <label className="block text-xs font-semibold text-gray-500 mb-1 uppercase tracking-wide">Reason (required)</label>
+            <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Why is this item being cancelled?</p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {CANCEL_ITEM_REASONS.map((option) => {
+                const active = selectedReason === option;
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    onClick={() => {
+                      setSelectedReason(active ? null : option);
+                      setReason(active ? "" : option === "Other" ? "" : option);
+                    }}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold border transition-colors ${
+                      active
+                        ? "bg-gray-900 border-gray-900 text-white"
+                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }`}
+                  >
+                    {option}
+                  </button>
+                );
+              })}
+            </div>
             <textarea
               rows={3}
-              autoFocus
+              autoFocus={selectedReason === "Other"}
               value={reason}
-              onChange={(e) => setReason(e.target.value)}
+              onChange={(e) => {
+                setReason(e.target.value);
+                setSelectedReason("Other");
+              }}
               placeholder="Why is this item being cancelled?"
               className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-rose-300 resize-none bg-gray-50 focus:bg-white transition-colors"
             />
