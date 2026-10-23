@@ -29,8 +29,9 @@ import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js
 import { ROLES } from "../../../constants/permissions.js";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { notifyError } from "../../../services/dialogService";
+import CancelOrderItemModal from "../components/CancelOrderItemModal.jsx";
 import CancelOrderModal from "../components/CancelOrderModal.jsx";
-import { cancelOrder as cancelOrderRequest } from "../services/orderService.js";
+import { cancelOrder as cancelOrderRequest, cancelOrderItem as cancelOrderItemRequest } from "../services/orderService.js";
 import { STATUS_THEME, DEFAULT_THEME } from "../constants/orderConstants.js";
 import {
   getOrderActions,
@@ -799,6 +800,7 @@ export default function OrderFullDetailsPage() {
   const [pendingAction, setPendingAction] = useState(null); // action needing input/reason
   const [actionInput, setActionInput] = useState({});
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [cancelItemTarget, setCancelItemTarget] = useState(null);
 
   const executeAction = (action, input = {}) => {
     // Cancel gets its own dedicated modal (penalty/refund preview + admin
@@ -1021,7 +1023,7 @@ export default function OrderFullDetailsPage() {
                 return (
                   <div className="space-y-3">
                     {items.map((it, i) => (
-                      <div key={i} className="flex items-center gap-3">
+                      <div key={i} className={`flex items-center gap-3 ${it.is_cancelled ? "opacity-50" : ""}`}>
                         <div className="w-14 h-14 rounded-xl overflow-hidden bg-teal-50 border border-gray-100 flex items-center justify-center shrink-0">
                           {it.image_url ? (
                             <img src={resolveMediaUrl(it.image_url)} alt={it.service_name || "Service"} className="w-full h-full object-cover" />
@@ -1030,8 +1032,12 @@ export default function OrderFullDetailsPage() {
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm font-bold text-gray-800 truncate">{it.service_name || "Service"}</p>
-                          {it.category_name && <p className="text-xs text-gray-500 truncate">{it.category_name}</p>}
+                          <p className={`text-sm font-bold text-gray-800 truncate ${it.is_cancelled ? "line-through" : ""}`}>{it.service_name || "Service"}</p>
+                          {it.is_cancelled ? (
+                            <p className="text-xs font-semibold text-rose-600">Cancelled</p>
+                          ) : (
+                            it.category_name && <p className="text-xs text-gray-500 truncate">{it.category_name}</p>
+                          )}
                           {it.person_name && <p className="text-[11px] text-gray-400 mt-0.5">For: {it.person_name}</p>}
                           {it.notes && (
                             <p className="text-[11px] text-gray-500 mt-0.5 italic">Note: {it.notes}</p>
@@ -1060,6 +1066,27 @@ export default function OrderFullDetailsPage() {
                             Qty {it.quantity}
                           </span>
                         )}
+                        {/* Per-item cancel - admin/employee only, only on real
+                            multi-item orders, never on an already-cancelled
+                            item, and never when this would be the LAST active
+                            item (that's a whole-order cancel instead - see
+                            item_cancellation_service.py's is_last_active_item
+                            guard, re-validated server-side regardless of this
+                            client-side check). */}
+                        {!isTailor &&
+                          items.length > 1 &&
+                          it.order_item_id != null &&
+                          !it.is_cancelled &&
+                          items.filter((x) => !x.is_cancelled).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setCancelItemTarget(it)}
+                              title="Cancel this item"
+                              className="shrink-0 w-8 h-8 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 flex items-center justify-center"
+                            >
+                              <XCircle size={16} />
+                            </button>
+                          )}
                       </div>
                     ))}
                     {order.UrgencyLevel && order.UrgencyLevel.toLowerCase() !== "standard" && (
@@ -1865,6 +1892,28 @@ export default function OrderFullDetailsPage() {
               await refresh();
             } catch (err) {
               notifyError(extractErrorMessage(err, "Failed to cancel order."));
+            } finally {
+              setActionLoading(false);
+            }
+          }}
+        />
+      )}
+
+      {cancelItemTarget && (
+        <CancelOrderItemModal
+          orderId={order.Id}
+          item={cancelItemTarget}
+          submitting={actionLoading}
+          onClose={() => setCancelItemTarget(null)}
+          onConfirm={async (reason) => {
+            setActionLoading(true);
+            setMsg(null);
+            try {
+              await cancelOrderItemRequest(order.Id, cancelItemTarget.order_item_id, reason);
+              setCancelItemTarget(null);
+              await refresh();
+            } catch (err) {
+              notifyError(extractErrorMessage(err, "Failed to cancel item."));
             } finally {
               setActionLoading(false);
             }

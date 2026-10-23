@@ -40,6 +40,20 @@ export async function getOrderCancellationRecord(orderId) {
   return response.data;
 }
 
+// Per-item cancel (cancel one line item within a multi-item order,
+// without cancelling the whole order) - mirrors the whole-order functions
+// above, scoped to an OrderItem instead. See
+// app/services/cancellation/item_cancellation_service.py.
+export async function getAdminItemCancellationPreview(orderId, itemId) {
+  const response = await api.get(`/admin/orders/${orderId}/items/${itemId}/cancellation-preview`);
+  return response.data;
+}
+
+export async function cancelOrderItem(orderId, itemId, reason) {
+  const response = await api.post(`/admin/orders/${orderId}/items/${itemId}/cancel`, { reason });
+  return response.data;
+}
+
 export async function getTailorsForFilter(role) {
   const endpoint = role === ROLES.EMPLOYEE ? "/employee/tailors" : "/admin/tailors";
   const response = await api.get(endpoint);
