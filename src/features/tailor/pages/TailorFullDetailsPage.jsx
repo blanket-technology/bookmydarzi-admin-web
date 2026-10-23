@@ -529,6 +529,7 @@ export default function TailorFullDetailsPage() {
   // client-side from the orders list above. ──
   const kpis = [
     { label: "Active Orders", value: workloadLoading ? "…" : workload?.active_orders ?? "-", accent: "text-blue-600" },
+    { label: "Total Orders", value: workloadLoading ? "…" : workload?.total_orders ?? "-" },
     { label: "Pending Stitching", value: ordersLoading ? "…" : productionCounts.pendingStitching, accent: "text-amber-600" },
     { label: "Ready for QC", value: ordersLoading ? "…" : productionCounts.readyForQc },
     { label: "Ready for Dispatch", value: ordersLoading ? "…" : productionCounts.readyForDispatch },
@@ -849,6 +850,7 @@ export default function TailorFullDetailsPage() {
                   { label: "Ready for Dispatch", value: productionCounts.readyForDispatch },
                   { label: "Delayed Orders", value: productionCounts.delayed },
                   { label: "Completed Orders", value: workload?.completed_orders },
+                  { label: "Total Orders", value: workload?.total_orders },
                 ]} />
               </div>
 
@@ -860,6 +862,7 @@ export default function TailorFullDetailsPage() {
                   <StatGrid items={[
                     { label: "Current Queue", value: workload.active_orders },
                     { label: "Pending Orders", value: workload.pending_orders },
+                    { label: "Total Orders", value: workload.total_orders },
                     { label: "Capacity Utilization", value: `${workload.utilization_percentage}%` },
                   ]} />
                 ) : (

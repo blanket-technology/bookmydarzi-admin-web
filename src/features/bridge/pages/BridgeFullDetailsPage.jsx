@@ -5,7 +5,7 @@ import {
   CheckCircle2, XCircle, Loader2, AlertTriangle, User, Ruler,
   Truck,
 } from "lucide-react";
-import api from "../../../services/api";
+import api, { resolveMediaUrl } from "../../../services/api";
 import { extractErrorMessage } from "../../../utils/formatters";
 import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js";
 
@@ -641,6 +641,34 @@ export default function BridgeFullDetailsPage() {
                 : "Not assigned"
             }
           />
+
+          {/* Customer's reference images - "this is what I want it to look
+              like", same block as OrderFullDetailsPage.jsx, just previously
+              missing from the Bridge detail page entirely. */}
+          {Array.isArray(order.ImageReferences) && order.ImageReferences.length > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-50">
+              <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide mb-2">
+                Reference Photos from Customer ({order.ImageReferences.length})
+              </p>
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                {order.ImageReferences.map((img, i) => {
+                  const url = resolveMediaUrl(img);
+                  return (
+                    <a
+                      key={i}
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block aspect-square rounded-xl overflow-hidden border border-gray-100 bg-gray-50 hover:opacity-90 transition-opacity"
+                      title="Open full size"
+                    >
+                      <img src={url} alt={`Reference ${i + 1}`} className="w-full h-full object-cover" />
+                    </a>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Delivery Address */}

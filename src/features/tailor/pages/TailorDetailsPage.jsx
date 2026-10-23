@@ -271,7 +271,11 @@ export default function TailorDetailsPage() {
                           <span className="font-medium text-yellow-600">
                             {w.pending_orders}
                           </span>{" "}
-                          pending
+                          pending ·{" "}
+                          <span className="font-medium text-gray-700">
+                            {w.total_orders}
+                          </span>{" "}
+                          total
                         </p>
                       </div>
                       {/* is_available is the tailor's own manual availability
