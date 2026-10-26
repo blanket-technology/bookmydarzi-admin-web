@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import Cropper from "react-easy-crop";
+import "react-easy-crop/react-easy-crop.css";
 import { Check, Loader2, X, ZoomIn } from "lucide-react";
 
 /**
