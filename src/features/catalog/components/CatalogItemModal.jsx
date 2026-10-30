@@ -72,6 +72,7 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
     estimated_delivery_hours: initial?.estimated_delivery_hours ?? 6,
     is_premium: initial?.is_premium ?? false,
     alteration_group: initial?.alteration_group ?? "",
+    group_label: initial?.group_label ?? "",
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -119,7 +120,19 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
           : await catalogService.createCategory(base);
         onSaved(res);
       } else if (level === "line") {
-        const payload = { ...base, category_id: Number(initial?.category_id ?? parent.categoryId) };
+        const payload = {
+          ...base,
+          category_id: Number(initial?.category_id ?? parent.categoryId),
+          // Bug fix: PATCH /service-lines/{id} treats group_label: null as
+          // "leave unchanged" (same convention every other nullable field
+          // on this endpoint already follows), so sending null here when
+          // the admin clears the field would silently fail to clear it.
+          // Empty string IS treated as a real value to write - the
+          // frontend's own grouping logic already treats an empty/blank
+          // group_label the same as null (ungrouped), so this clears the
+          // visible grouping without needing a different PATCH semantic.
+          group_label: form.group_label.trim(),
+        };
         const res = isEdit
           ? await catalogService.updateServiceLine(initial.id, payload)
           : await catalogService.createServiceLine(payload);
@@ -199,6 +212,20 @@ export default function CatalogItemModal({ level, initial, parent, onClose, onSa
       <Field label="Description">
         <textarea rows={2} className={tinp} value={form.description} onChange={(e) => set("description", e.target.value)} />
       </Field>
+      {level === "line" && (
+        <Field label="Group">
+          <input
+            className={inp}
+            value={form.group_label}
+            onChange={(e) => set("group_label", e.target.value)}
+            placeholder="e.g. Men, Women, Kids (leave blank for no grouping)"
+          />
+          <p className="mt-1 text-xs text-gray-400">
+            Groups this sub-category under a heading on the website/app (e.g. all "Men" alteration
+            lines show together). Leave blank if this category doesn&apos;t need sub-grouping.
+          </p>
+        </Field>
+      )}
       <Field label="Image">
         <ImageUploadField value={form.image_url} onChange={(v) => set("image_url", v)} uploadPath={CATALOG_IMAGE_UPLOAD_PATH} />
       </Field>
