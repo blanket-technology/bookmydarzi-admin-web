@@ -99,6 +99,13 @@ export default function UserTable({
                 <VerificationPill icon={Phone} verified={u.IsMobileVerified} label="Mobile" />
               </div>
             </td>
+            <td className="px-4 py-3 text-gray-500 whitespace-nowrap text-[13px]">
+              {u.SignupCity || u.SignupState ? (
+                [u.SignupCity, u.SignupState].filter(Boolean).join(", ")
+              ) : (
+                <span className="text-gray-400">N/A</span>
+              )}
+            </td>
             <td className="px-4 py-3 text-gray-400 whitespace-nowrap text-[13px]">
               {u.CreatedAt ? formatDate(u.CreatedAt) : "N/A"}
             </td>

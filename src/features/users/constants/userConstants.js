@@ -67,6 +67,11 @@ export const USER_TABLE_COLUMNS = [
   { key: "mobile", label: "Mobile" },
   { key: "role", label: "Role" },
   { key: "verification", label: "Verified", align: "center" },
+  // IP-geolocated city/state captured once at signup - see
+  // app/services/location/ip_geolocation.py on the backend. Best-effort:
+  // null for any signup before this feature shipped, or where the lookup
+  // simply failed.
+  { key: "location", label: "Location" },
   { key: "joined", label: "Joined", sortAccessor: (u) => (u.CreatedAt ? new Date(u.CreatedAt) : null) },
   { key: "chevron", label: "" },
 ];
