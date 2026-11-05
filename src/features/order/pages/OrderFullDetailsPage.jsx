@@ -29,6 +29,7 @@ import { paymentStatusLabel } from "../../payments/constants/paymentConstants.js
 import { ROLES } from "../../../constants/permissions.js";
 import { extractErrorMessage, formatCurrency, formatDateTime } from "../../../utils/formatters";
 import { notifyError } from "../../../services/dialogService";
+import { isValidGstin, normalizeGstin } from "../../../utils/gstin";
 import CancelOrderItemModal from "../components/CancelOrderItemModal.jsx";
 import CancelOrderModal from "../components/CancelOrderModal.jsx";
 import { cancelOrder as cancelOrderRequest, cancelOrderItem as cancelOrderItemRequest } from "../services/orderService.js";
@@ -500,6 +501,9 @@ export default function OrderFullDetailsPage() {
   const [invoiceLoading, setInvoiceLoading] = useState(false);
 
   const [editingNotes, setEditingNotes] = useState(false);
+  const [editingGstin, setEditingGstin] = useState(false);
+  const [gstinDraft, setGstinDraft] = useState(initialOrder?.CustomerGstin || "");
+  const [savingGstin, setSavingGstin] = useState(false);
   const [editingMeasurement, setEditingMeasurement] = useState(false);
   const [savingMeasurement, setSavingMeasurement] = useState(false);
   const [measurementForm, setMeasurementForm] = useState({
@@ -527,6 +531,13 @@ export default function OrderFullDetailsPage() {
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order?.Id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (order && !editingGstin) setGstinDraft(order.CustomerGstin || "");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [order?.CustomerGstin]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   // The tailor list populates the assignment dropdown ONLY - it is not needed
@@ -792,6 +803,28 @@ export default function OrderFullDetailsPage() {
       setMsg({ type: "error", text: extractErrorMessage(err, "Failed to save notes.") });
     } finally {
       setActionLoading(false);
+    }
+  };
+
+  const saveGstin = async () => {
+    const trimmed = gstinDraft.trim();
+    if (trimmed && !isValidGstin(trimmed)) {
+      setMsg({ type: "error", text: "Enter a valid 15-character GSTIN, or clear it." });
+      return;
+    }
+    setSavingGstin(true);
+    setMsg(null);
+    try {
+      const res = await api.patch(`/admin/orders/${order.Id}/gstin`, {
+        gstin: trimmed ? normalizeGstin(trimmed) : null,
+      });
+      if (res.data) setOrder(res.data);
+      setMsg({ type: "success", text: "GSTIN updated." });
+      setEditingGstin(false);
+    } catch (err) {
+      setMsg({ type: "error", text: extractErrorMessage(err, "Failed to update GSTIN.") });
+    } finally {
+      setSavingGstin(false);
     }
   };
 
@@ -1671,6 +1704,54 @@ export default function OrderFullDetailsPage() {
                   <Fact label="Balance" value={order.RemainingAmountDisplay} emphasis={Number(order.RemainingAmount) > 0} />
                   <Fact label="Advance" value={order.BookingAmount ? formatCurrency(order.BookingAmount) : null} />
                   <Fact label="Status" value={paymentStatusLabel(order.SettlementStatus || order.PaymentStatus)} />
+                </div>
+                <div className="mt-3 pt-3 border-t border-gray-100">
+                  {editingGstin ? (
+                    <div>
+                      <label className="text-xs font-semibold text-gray-500 block mb-1">GSTIN</label>
+                      <input
+                        type="text"
+                        value={gstinDraft}
+                        onChange={(e) => setGstinDraft(e.target.value.toUpperCase())}
+                        placeholder="e.g. 09AABCT1234A1Z5"
+                        maxLength={15}
+                        className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-sm focus:outline-none focus:border-teal-500"
+                      />
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          onClick={saveGstin}
+                          disabled={savingGstin}
+                          className="rounded-lg bg-teal-600 text-white text-xs font-bold px-3 py-1.5 disabled:opacity-50"
+                        >
+                          {savingGstin ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={() => {
+                            setEditingGstin(false);
+                            setGstinDraft(order.CustomerGstin || "");
+                          }}
+                          className="rounded-lg border border-gray-200 text-xs font-bold px-3 py-1.5"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                      {!order.GstinEditable && (
+                        <p className="mt-1.5 text-[11px] text-amber-600">
+                          Order already invoiced - correcting this takes effect on the next invoice download.
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between">
+                      <Fact label="GSTIN" value={order.CustomerGstin || "-"} />
+                      <button
+                        onClick={() => setEditingGstin(true)}
+                        className="text-xs font-semibold text-teal-700 hover:underline"
+                      >
+                        {order.CustomerGstin ? "Edit" : "Add"}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </SectionCard>
             )}
